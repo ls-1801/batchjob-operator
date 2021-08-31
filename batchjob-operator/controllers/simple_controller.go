@@ -17,12 +17,15 @@ limitations under the License.
 package controllers
 
 import (
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
+
 	"context"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 
 	batchjobv1alpha1 "github.com/ls-1801/batchjob-operator/api/v1alpha1"
 )
@@ -33,9 +36,10 @@ type SimpleReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=batchjob.gcr.io,resources=simples,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=batchjob.gcr.io,resources=simples/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=batchjob.gcr.io,resources=simples/finalizers,verbs=update
+//+kubebuilder:rbac:groups=batchjob.gcr.io,resources=Simples,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=batchjob.gcr.io,resources=Simples/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=batchjob.gcr.io,resources=Simples/finalizers,verbs=update
+//+kubebuilder:rbac:groups=sparkoperator.k8s.io,resources=sparkapplications,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -47,16 +51,52 @@ type SimpleReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.9.2/pkg/reconcile
 func (r *SimpleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	log := ctrllog.FromContext(ctx)
 
+	batchjob := &batchjobv1alpha1.Simple{}
+	err := r.Get(ctx, req.NamespacedName, batchjob)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			// Request object not found, could have been deleted after reconcile request.
+			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
+			// Return and don't requeue
+			log.Info("BatchJob resource not found. Ignoring since object must be deleted")
+			return ctrl.Result{}, nil
+		}
+		// Error reading the object - requeue the request.
+		log.Error(err, "Failed to get BatchJob")
+		return ctrl.Result{}, err
+	}
+
+	// Check if the deployment already exists, if not create a new one
+	found := &batchjobv1alpha1.SparkApplication{}
+	// Maybe the spark application name should be used here
+	err = r.Get(ctx, types.NamespacedName{Name: batchjob.Name, Namespace: batchjob.Namespace}, found)
+	if err != nil && errors.IsNotFound(err) {
+		// Define a new SparkApplication
+		dep := r.submitNewSparkApplication(batchjob)
+		log.Info("Creating a new SparkApplication", "SparkApplication.Namespace", dep.Namespace, "SparkApplication.Name", dep.Name)
+		err = r.Create(ctx, dep)
+		if err != nil {
+			log.Error(err, "Failed to create new SparkApplication", "SparkApplication.Namespace", dep.Namespace, "SparkApplication.Name", dep.Name)
+			return ctrl.Result{}, err
+		}
+		// SparkApplication created successfully - return and requeue
+		return ctrl.Result{Requeue: true}, nil
+	}
 	// your logic here
 
 	return ctrl.Result{}, nil
+}
+
+func (r *SimpleReconciler) submitNewSparkApplication(simple *batchjobv1alpha1.Simple) *batchjobv1alpha1.SparkApplication {
+	return &simple.Spec.Application
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *SimpleReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&batchjobv1alpha1.Simple{}).
+		Owns(&batchjobv1alpha1.SparkApplication{}).
 		Complete(r)
 }
