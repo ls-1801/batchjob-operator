@@ -29,13 +29,17 @@ type SimpleSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of Simple. Edit simple_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	Foo    string                 `json:"foo,omitempty"`
+	Spec   SparkApplicationSpec   `json:"spec"`
+	Status SparkApplicationStatus `json:"status,omitempty"`
 }
 
 // SimpleStatus defines the observed state of Simple
 type SimpleStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	InQueue bool `json:"inQueue"`
+	Running bool `json:"running"`
 }
 
 //+kubebuilder:object:root=true
@@ -51,14 +55,50 @@ type Simple struct {
 }
 
 //+kubebuilder:object:root=true
-
+//+kubebuilder:subresource:app
 // SimpleList contains a list of Simple
 type SimpleList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Simple `json:"items"`
+	Application     SparkApplicationSpec `json:"app,omitempty"`
 }
 
 func init() {
 	SchemeBuilder.Register(&Simple{}, &SimpleList{})
+}
+
+// PrometheusMonitoringEnabled returns if Prometheus monitoring is enabled or not.
+func (s *Simple) PrometheusMonitoringEnabled() bool {
+	return s.Spec.Spec.Monitoring != nil && s.Spec.Spec.Monitoring.Prometheus != nil
+}
+
+// HasPrometheusConfigFile returns if Prometheus monitoring uses a configuration file in the container.
+func (s *Simple) HasPrometheusConfigFile() bool {
+	return s.PrometheusMonitoringEnabled() &&
+		s.Spec.Spec.Monitoring.Prometheus.ConfigFile != nil &&
+		*s.Spec.Spec.Monitoring.Prometheus.ConfigFile != ""
+}
+
+// HasPrometheusConfig returns if Prometheus monitoring defines metricsProperties in the spec.
+func (s *Simple) HasMetricsProperties() bool {
+	return s.PrometheusMonitoringEnabled() &&
+		s.Spec.Spec.Monitoring.MetricsProperties != nil &&
+		*s.Spec.Spec.Monitoring.MetricsProperties != ""
+}
+
+// HasPrometheusConfigFile returns if Monitoring defines metricsPropertiesFile in the spec.
+func (s *Simple) HasMetricsPropertiesFile() bool {
+	return s.PrometheusMonitoringEnabled() &&
+		s.Spec.Spec.Monitoring.MetricsPropertiesFile != nil &&
+		*s.Spec.Spec.Monitoring.MetricsPropertiesFile != ""
+}
+
+// ExposeDriverMetrics returns if driver metrics should be exposed.
+func (s *Simple) ExposeDriverMetrics() bool {
+	return s.Spec.Spec.Monitoring != nil && s.Spec.Spec.Monitoring.ExposeDriverMetrics
+}
+
+// ExposeExecutorMetrics returns if executor metrics should be exposed.
+func (s *Simple) ExposeExecutorMetrics() bool {
+	return s.Spec.Spec.Monitoring != nil && s.Spec.Spec.Monitoring.ExposeExecutorMetrics
 }
