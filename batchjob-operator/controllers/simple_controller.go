@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 
+	sparkv1beta2 "github.com/GoogleCloudPlatform/spark-on-k8s-operator/pkg/apis/sparkoperator.k8s.io/v1beta2"
 	batchjobv1alpha1 "github.com/ls-1801/batchjob-operator/api/v1alpha1"
 )
 
@@ -69,7 +70,7 @@ func (r *SimpleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	// Check if the deployment already exists, if not create a new one
-	found := &batchjobv1alpha1.SparkApplication{}
+	found := &sparkv1beta2.SparkApplication{}
 	// Maybe the spark application name should be used here
 	err = r.Get(ctx, types.NamespacedName{Name: batchjob.Name, Namespace: batchjob.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
@@ -89,14 +90,17 @@ func (r *SimpleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	return ctrl.Result{}, nil
 }
 
-func (r *SimpleReconciler) submitNewSparkApplication(simple *batchjobv1alpha1.Simple) *batchjobv1alpha1.SparkApplication {
-	return &simple.Spec.Application
+func (r *SimpleReconciler) submitNewSparkApplication(simple *batchjobv1alpha1.Simple) *sparkv1beta2.SparkApplication {
+	var spark = &sparkv1beta2.SparkApplication{}
+	spark.Namespace = "default"
+	spark.Spec = simple.Spec.Spec
+	return spark
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *SimpleReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&batchjobv1alpha1.Simple{}).
-		Owns(&batchjobv1alpha1.SparkApplication{}).
+		Owns(&sparkv1beta2.SparkApplication{}).
 		Complete(r)
 }

@@ -18,6 +18,8 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	v1beta2 "github.com/GoogleCloudPlatform/spark-on-k8s-operator/pkg/apis/sparkoperator.k8s.io/v1beta2"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -29,9 +31,9 @@ type SimpleSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of Simple. Edit simple_types.go to remove/update
-	Foo    string                 `json:"foo,omitempty"`
-	Spec   SparkApplicationSpec   `json:"spec"`
-	Status SparkApplicationStatus `json:"status,omitempty"`
+	Foo    string                         `json:"foo,omitempty"`
+	Spec   v1beta2.SparkApplicationSpec   `json:"spec"`
+	Status v1beta2.SparkApplicationStatus `json:"status,omitempty"`
 }
 
 // SimpleStatus defines the observed state of Simple
@@ -60,7 +62,7 @@ type Simple struct {
 type SimpleList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Application     SparkApplicationSpec `json:"app,omitempty"`
+	Application     v1beta2.SparkApplicationSpec `json:"app,omitempty"`
 }
 
 func init() {
