@@ -3,7 +3,7 @@
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
-VERSION ?= 0.0.1
+VERSION ?= latest
 
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
@@ -119,6 +119,12 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
+restart: ## Restart the deployment
+	kubectl rollout restart -n batchjob-operator-system deployment.apps/batchjob-operator-controller-manager
+
+log:
+	kubectl wait --for=condition=ready pod $(shell kubectl get pods -n batchjob-operator-system -o jsonpath="{.items[*].metadata.name}") -n batchjob-operator-system
+	kubectl logs -f $(shell kubectl get pods -n batchjob-operator-system -o jsonpath="{.items[*].metadata.name}") -n batchjob-operator-system -c manager
 
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
