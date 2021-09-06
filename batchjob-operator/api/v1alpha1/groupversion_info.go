@@ -31,6 +31,13 @@ var (
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
 	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}
 
+	// GroupVersion is group version used to register these objects
+	GroupVersionSpark = schema.GroupVersion{Group: "sparkoperator.k8s.io", Version: "v1beta2"}
+
+	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
+	SchemeBuilderSpark = &scheme.Builder{GroupVersion: GroupVersionSpark}
+
 	// AddToScheme adds the types in this group-version to the given scheme.
-	AddToScheme = SchemeBuilder.AddToScheme
+	AddToScheme      = SchemeBuilder.AddToScheme
+	AddToSchemeSpark = SchemeBuilderSpark.AddToScheme
 )

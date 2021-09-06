@@ -45,6 +45,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(batchjobv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(batchjobv1alpha1.AddToSchemeSpark(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 

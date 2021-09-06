@@ -31,17 +31,17 @@ type SimpleSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of Simple. Edit simple_types.go to remove/update
-	Foo    string                         `json:"foo,omitempty"`
-	Spec   v1beta2.SparkApplicationSpec   `json:"spec"`
-	Status v1beta2.SparkApplicationStatus `json:"status,omitempty"`
+	Foo  string                       `json:"foo,omitempty"`
+	Spec v1beta2.SparkApplicationSpec `json:"spec"`
 }
 
 // SimpleStatus defines the observed state of Simple
 type SimpleStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	InQueue bool `json:"inQueue"`
-	Running bool `json:"running"`
+	InQueue bool                           `json:"inQueue"`
+	Running bool                           `json:"running"`
+	Status  v1beta2.SparkApplicationStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
@@ -57,16 +57,17 @@ type Simple struct {
 }
 
 //+kubebuilder:object:root=true
-//+kubebuilder:subresource:app
+
 // SimpleList contains a list of Simple
 type SimpleList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Application     v1beta2.SparkApplicationSpec `json:"app,omitempty"`
+	Items           []Simple `json:"items"`
 }
 
 func init() {
 	SchemeBuilder.Register(&Simple{}, &SimpleList{})
+	SchemeBuilderSpark.Register(&v1beta2.SparkApplication{}, &v1beta2.SparkApplicationList{})
 }
 
 // PrometheusMonitoringEnabled returns if Prometheus monitoring is enabled or not.

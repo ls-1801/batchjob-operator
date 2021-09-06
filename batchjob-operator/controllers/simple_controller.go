@@ -37,9 +37,9 @@ type SimpleReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=batchjob.gcr.io,resources=Simples,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=batchjob.gcr.io,resources=Simples/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=batchjob.gcr.io,resources=Simples/finalizers,verbs=update
+//+kubebuilder:rbac:groups=batchjob.gcr.io,resources=simples,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=batchjob.gcr.io,resources=simples/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=batchjob.gcr.io,resources=simples/finalizers,verbs=update
 //+kubebuilder:rbac:groups=sparkoperator.k8s.io,resources=sparkapplications,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
@@ -53,9 +53,10 @@ type SimpleReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.9.2/pkg/reconcile
 func (r *SimpleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := ctrllog.FromContext(ctx)
-
+	log.Info("Reconciler Loop Is Running")
 	batchjob := &batchjobv1alpha1.Simple{}
 	err := r.Get(ctx, req.NamespacedName, batchjob)
+	log.Info("Get Called")
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -64,6 +65,7 @@ func (r *SimpleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			log.Info("BatchJob resource not found. Ignoring since object must be deleted")
 			return ctrl.Result{}, nil
 		}
+		log.Info("Error Not NotFound")
 		// Error reading the object - requeue the request.
 		log.Error(err, "Failed to get BatchJob")
 		return ctrl.Result{}, err
@@ -73,6 +75,7 @@ func (r *SimpleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	found := &sparkv1beta2.SparkApplication{}
 	// Maybe the spark application name should be used here
 	err = r.Get(ctx, types.NamespacedName{Name: batchjob.Name, Namespace: batchjob.Namespace}, found)
+	log.Info("Get Spark")
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new SparkApplication
 		dep := r.submitNewSparkApplication(batchjob)
@@ -86,12 +89,19 @@ func (r *SimpleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{Requeue: true}, nil
 	}
 	// your logic here
+	if err != nil {
+		log.Error(err, "Failed to get SparkApplications")
+		return ctrl.Result{}, err
+	}
+
+	log.Info("NOT IMPLMENETED")
 
 	return ctrl.Result{}, nil
 }
 
 func (r *SimpleReconciler) submitNewSparkApplication(simple *batchjobv1alpha1.Simple) *sparkv1beta2.SparkApplication {
 	var spark = &sparkv1beta2.SparkApplication{}
+	spark.Name = simple.Name
 	spark.Namespace = "default"
 	spark.Spec = simple.Spec.Spec
 	return spark
@@ -99,8 +109,9 @@ func (r *SimpleReconciler) submitNewSparkApplication(simple *batchjobv1alpha1.Si
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *SimpleReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	mgr.GetLogger().Info("Setup")
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&batchjobv1alpha1.Simple{}).
-		Owns(&sparkv1beta2.SparkApplication{}).
+		//Owns(&sparkv1beta2.SparkApplication{}).
 		Complete(r)
 }
