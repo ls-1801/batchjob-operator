@@ -85,13 +85,31 @@ func (r *SimpleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			log.Error(err, "Failed to create new SparkApplication", "SparkApplication.Namespace", dep.Namespace, "SparkApplication.Name", dep.Name)
 			return ctrl.Result{}, err
 		}
-		// SparkApplication created successfully - return and requeue
+		// SparkApplication created successfully
+		log.Info("Status is now Running")
+		batchjob.Status.Running = true
+		if err = r.Update(ctx, batchjob); err != nil {
+			log.Error(err, "Failed to update BatchJob Status to Running", err)
+			return ctrl.Result{}, err
+		}
+
 		return ctrl.Result{Requeue: true}, nil
 	}
 	// your logic here
 	if err != nil {
 		log.Error(err, "Failed to get SparkApplications")
 		return ctrl.Result{}, err
+	}
+
+	if found.Status.AppState.State == sparkv1beta2.CompletedState {
+		batchjob.Status.Running = false
+		// SparkApplication created successfully
+		log.Info("Status is no longer Running")
+		batchjob.Status.Running = true
+		if err = r.Update(ctx, batchjob); err != nil {
+			log.Error(err, "Failed to update BatchJob Status to no longer Running", err)
+			return ctrl.Result{}, err
+		}
 	}
 
 	log.Info("NOT IMPLMENETED")
