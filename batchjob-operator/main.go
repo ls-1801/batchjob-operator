@@ -17,7 +17,9 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
+	"fmt"
 	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -29,7 +31,10 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
+	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	"net/http"
 
 	batchjobv1alpha1 "github.com/ls-1801/batchjob-operator/api/v1alpha1"
 	"github.com/ls-1801/batchjob-operator/controllers"
@@ -97,9 +102,30 @@ func main() {
 		os.Exit(1)
 	}
 
+	mgr.Add(WebServer{})
+
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+
+}
+
+type WebServer struct {
+}
+
+func (w WebServer) Start(context context.Context) error {
+	var log = ctrllog.FromContext(context)
+	log.Info("Init WebServer on port 9090")
+	http.HandleFunc("/queue", GetQueue)
+	log.Info("Listening on port 9090")
+	return http.ListenAndServe(":9090", nil)
+}
+
+func GetQueue(w http.ResponseWriter, req *http.Request) {
+	var log = ctrllog.FromContext(req.Context())
+	defer log.Info("Queue Request Done")
+	log.Info("Queue Request Started")
+	fmt.Fprintf(w, "Queue is Working")
 }

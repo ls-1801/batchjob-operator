@@ -23,5 +23,6 @@ FROM gcr.io/distroless/static:nonroot
 WORKDIR /
 COPY --from=builder /workspace/manager .
 USER 65532:65532
+EXPOSE 9090
 
 ENTRYPOINT ["/manager"]
