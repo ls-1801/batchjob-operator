@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"container/list"
 	"context"
 	"flag"
 	"fmt"
@@ -84,9 +85,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	var waiting = make(chan batchjobv1alpha1.Simple)
+	var scheduled = make(chan batchjobv1alpha1.Simple)
 	if err = (&controllers.SimpleReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:    mgr.GetClient(),
+		Scheme:    mgr.GetScheme(),
+		Waiting:   waiting,
+		Scheduled: scheduled,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Simple")
 		os.Exit(1)
@@ -102,7 +107,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	mgr.Add(WebServer{})
+	mgr.Add(WebServer{IncomingJobs: waiting, ScheduledJobs: scheduled, Queue: list.New()})
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
@@ -113,19 +118,44 @@ func main() {
 }
 
 type WebServer struct {
+	Queue         *list.List
+	IncomingJobs  chan batchjobv1alpha1.Simple
+	ScheduledJobs chan batchjobv1alpha1.Simple
 }
 
 func (w WebServer) Start(context context.Context) error {
 	var log = ctrllog.FromContext(context)
 	log.Info("Init WebServer on port 9090")
-	http.HandleFunc("/queue", GetQueue)
+	http.HandleFunc("/queue", w.GetQueue)
+	go w.ListenForNewJobs(context)
 	log.Info("Listening on port 9090")
 	return http.ListenAndServe(":9090", nil)
 }
 
-func GetQueue(w http.ResponseWriter, req *http.Request) {
+func (w *WebServer) ListenForNewJobs(context context.Context) {
+	var log = ctrllog.FromContext(context)
+	log.Info("Waiting for New Jobs to be added to the Queue")
+	for {
+		select {
+		case <-context.Done():
+			return
+		case newJob := <-w.IncomingJobs:
+			log.Info("Adding new Job to the Queue")
+			w.Queue.PushBack(newJob)
+		}
+	}
+}
+
+func (ws *WebServer) GetQueue(w http.ResponseWriter, req *http.Request) {
 	var log = ctrllog.FromContext(req.Context())
 	defer log.Info("Queue Request Done")
 	log.Info("Queue Request Started")
-	fmt.Fprintf(w, "Queue is Working")
+	log.Info("Current Queue contains", "queue", ws.Queue)
+	var string = "["
+	for e := ws.Queue.Front(); e != nil; e = e.Next() {
+		v := e.Value.(batchjobv1alpha1.Simple)
+		string += (fmt.Sprintf("%s,", v.Name))
+	}
+	string += "]"
+	fmt.Fprintf(w, "%s", string)
 }

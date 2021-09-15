@@ -34,7 +34,9 @@ import (
 // SimpleReconciler reconciles a Simple object
 type SimpleReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme    *runtime.Scheme
+	Waiting   chan batchjobv1alpha1.Simple
+	Scheduled chan batchjobv1alpha1.Simple
 }
 
 //+kubebuilder:rbac:groups=batchjob.gcr.io,resources=simples,verbs=get;list;watch;create;update;patch;delete
@@ -70,6 +72,11 @@ func (r *SimpleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		log.Error(err, "Failed to get BatchJob")
 		return ctrl.Result{}, err
 	}
+	log.Info("Found BatchJob", "BatchJob", batchjob)
+	if batchjob.Status.InQueue {
+		log.Info("BatchJob is already in Queue no further Actions")
+		return ctrl.Result{}, nil
+	}
 
 	// Check if the deployment already exists, if not create a new one
 	found := &sparkv1beta2.SparkApplication{}
@@ -77,23 +84,31 @@ func (r *SimpleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	err = r.Get(ctx, types.NamespacedName{Name: batchjob.Name, Namespace: batchjob.Namespace}, found)
 	log.Info("Get Spark")
 	if err != nil && errors.IsNotFound(err) {
-		// Define a new SparkApplication
-		dep := r.submitNewSparkApplication(batchjob)
-		log.Info("Creating a new SparkApplication", "SparkApplication.Namespace", dep.Namespace, "SparkApplication.Name", dep.Name)
-		err = r.Create(ctx, dep)
-		if err != nil {
-			log.Error(err, "Failed to create new SparkApplication", "SparkApplication.Namespace", dep.Namespace, "SparkApplication.Name", dep.Name)
-			return ctrl.Result{}, err
-		}
-		// SparkApplication created successfully
-		log.Info("Status is now Running")
-		batchjob.Status.Running = true
+		log.Info("New BatchJob found put in the queue")
+		batchjob.Status.InQueue = true
 		if err = r.Update(ctx, batchjob); err != nil {
-			log.Error(err, "Failed to update BatchJob Status to Running", err)
+			log.Error(err, "Failed to update BatchJob Status to InQueue", err)
 			return ctrl.Result{}, err
 		}
+		r.Waiting <- *batchjob
+		return ctrl.Result{}, nil
 
-		return ctrl.Result{Requeue: true}, nil
+		// Define a new SparkApplication
+		// dep := r.submitNewSparkApplication(batchjob)
+		// log.Info("Creating a new SparkApplication", "SparkApplication.Namespace", dep.Namespace, "SparkApplication.Name", dep.Name)
+		// err = r.Create(ctx, dep)
+		// if err != nil {
+		// 	log.Error(err, "Failed to create new SparkApplication", "SparkApplication.Namespace", dep.Namespace, "SparkApplication.Name", dep.Name)
+		// 	return ctrl.Result{}, err
+		// }
+		// // SparkApplication created successfully
+		// log.Info("Status is now Running")
+		// batchjob.Status.Running = true
+		// if err = r.Update(ctx, batchjob); err != nil {
+		// 	log.Error(err, "Failed to update BatchJob Status to Running", err)
+		// 	return ctrl.Result{}, err
+		// }
+
 	}
 	// your logic here
 	if err != nil {
