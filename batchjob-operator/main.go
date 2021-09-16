@@ -18,9 +18,7 @@ package main
 
 import (
 	"container/list"
-	"context"
 	"flag"
-	"fmt"
 	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -32,10 +30,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
-	"net/http"
 
 	batchjobv1alpha1 "github.com/ls-1801/batchjob-operator/api/v1alpha1"
 	"github.com/ls-1801/batchjob-operator/controllers"
@@ -90,6 +85,7 @@ func main() {
 	if err = (&controllers.SimpleReconciler{
 		Client:    mgr.GetClient(),
 		Scheme:    mgr.GetScheme(),
+		Queue:     list.New(),
 		Waiting:   waiting,
 		Scheduled: scheduled,
 	}).SetupWithManager(mgr); err != nil {
@@ -107,55 +103,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	mgr.Add(WebServer{IncomingJobs: waiting, ScheduledJobs: scheduled, Queue: list.New()})
-
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
 
-}
-
-type WebServer struct {
-	Queue         *list.List
-	IncomingJobs  chan batchjobv1alpha1.Simple
-	ScheduledJobs chan batchjobv1alpha1.Simple
-}
-
-func (w WebServer) Start(context context.Context) error {
-	var log = ctrllog.FromContext(context)
-	log.Info("Init WebServer on port 9090")
-	http.HandleFunc("/queue", w.GetQueue)
-	go w.ListenForNewJobs(context)
-	log.Info("Listening on port 9090")
-	return http.ListenAndServe(":9090", nil)
-}
-
-func (w *WebServer) ListenForNewJobs(context context.Context) {
-	var log = ctrllog.FromContext(context)
-	log.Info("Waiting for New Jobs to be added to the Queue")
-	for {
-		select {
-		case <-context.Done():
-			return
-		case newJob := <-w.IncomingJobs:
-			log.Info("Adding new Job to the Queue")
-			w.Queue.PushBack(newJob)
-		}
-	}
-}
-
-func (ws *WebServer) GetQueue(w http.ResponseWriter, req *http.Request) {
-	var log = ctrllog.FromContext(req.Context())
-	defer log.Info("Queue Request Done")
-	log.Info("Queue Request Started")
-	log.Info("Current Queue contains", "queue", ws.Queue)
-	var string = "["
-	for e := ws.Queue.Front(); e != nil; e = e.Next() {
-		v := e.Value.(batchjobv1alpha1.Simple)
-		string += (fmt.Sprintf("%s,", v.Name))
-	}
-	string += "]"
-	fmt.Fprintf(w, "%s", string)
 }

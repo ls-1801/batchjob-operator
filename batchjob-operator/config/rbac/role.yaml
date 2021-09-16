@@ -9,7 +9,7 @@ rules:
 - apiGroups:
   - batchjob.gcr.io
   resources:
-  - Simples
+  - simples
   verbs:
   - create
   - delete
@@ -21,17 +21,25 @@ rules:
 - apiGroups:
   - batchjob.gcr.io
   resources:
-  - Simples/finalizers
+  - simples/finalizers
   verbs:
   - update
 - apiGroups:
   - batchjob.gcr.io
   resources:
-  - Simples/status
+  - simples/status
   verbs:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - sparkoperator.k8s.io
   resources:

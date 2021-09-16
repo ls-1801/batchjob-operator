@@ -17,6 +17,12 @@ limitations under the License.
 package controllers
 
 import (
+	"container/list"
+	"encoding/json"
+	"fmt"
+	"net/http"
+
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -34,6 +40,7 @@ import (
 // SimpleReconciler reconciles a Simple object
 type SimpleReconciler struct {
 	client.Client
+	Queue     *list.List
 	Scheme    *runtime.Scheme
 	Waiting   chan batchjobv1alpha1.Simple
 	Scheduled chan batchjobv1alpha1.Simple
@@ -43,6 +50,7 @@ type SimpleReconciler struct {
 //+kubebuilder:rbac:groups=batchjob.gcr.io,resources=simples/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=batchjob.gcr.io,resources=simples/finalizers,verbs=update
 //+kubebuilder:rbac:groups=sparkoperator.k8s.io,resources=sparkapplications,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=nodes,verbs=get;list;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -140,9 +148,60 @@ func (r *SimpleReconciler) submitNewSparkApplication(simple *batchjobv1alpha1.Si
 	return spark
 }
 
+type WebServer struct {
+	Client *SimpleReconciler
+}
+
+func (w WebServer) Start(context context.Context) error {
+	var log = ctrllog.FromContext(context)
+	log.Info("Init WebServer on port 9090")
+	http.HandleFunc("/queue", w.GetQueue)
+	http.HandleFunc("/nodes", w.GetNodes)
+	go w.ListenForNewJobs(context)
+	log.Info("Listening on port 9090")
+	return http.ListenAndServe(":9090", nil)
+}
+
+func (w *WebServer) ListenForNewJobs(context context.Context) {
+	var log = ctrllog.FromContext(context)
+	log.Info("Waiting for New Jobs to be added to the Queue")
+	for {
+		select {
+		case <-context.Done():
+			return
+		case newJob := <-w.Client.Waiting:
+			log.Info("Adding new Job to the Queue")
+			w.Client.Queue.PushBack(newJob)
+		}
+	}
+}
+
+func (ws *WebServer) GetQueue(w http.ResponseWriter, req *http.Request) {
+	var log = ctrllog.FromContext(req.Context())
+	defer log.Info("Queue Request Done")
+	log.Info("Queue Request Started")
+	log.Info("Current Queue contains", "queue", ws.Client.Queue)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(ws.Client.Queue)
+}
+
+func (ws *WebServer) GetNodes(w http.ResponseWriter, req *http.Request) {
+	var log = ctrllog.FromContext(req.Context())
+	defer log.Info("Node Request Done")
+	log.Info("Node Request Started")
+	var nodeList = &corev1.NodeList{}
+	if err := ws.Client.Client.List(req.Context(), nodeList); err != nil {
+		log.Error(err, "Error getting Nodes")
+		fmt.Fprintln(w, "Error getting the list")
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(nodeList)
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *SimpleReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	mgr.GetLogger().Info("Setup")
+	mgr.Add(WebServer{Client: r})
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&batchjobv1alpha1.Simple{}).
 		//Owns(&sparkv1beta2.SparkApplication{}).
