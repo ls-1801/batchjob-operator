@@ -126,6 +126,9 @@ log:
 	kubectl wait --for=condition=ready pod $(shell kubectl get pods -n batchjob-operator-system -o jsonpath="{.items[*].metadata.name}") -n batchjob-operator-system
 	kubectl logs -f $(shell kubectl get pods -n batchjob-operator-system -o jsonpath="{.items[*].metadata.name}") -n batchjob-operator-system -c manager
 
+pfwd: ## Port Forward Service
+	kubectl port-forward --namespace batchjob-operator-system $(shell kubectl get pod --namespace batchjob-operator-system --selector="control-plane=controller-manager" --output jsonpath='{.items[0].metadata.name}') 8080:9090
+
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
 	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.6.1)
