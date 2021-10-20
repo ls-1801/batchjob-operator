@@ -100,10 +100,14 @@ func (r *SimpleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if err != nil && errors.IsNotFound(err) {
 		logger.Info("New BatchJob found put in the queue")
 		batchjob.Status.InQueue = true
-		if err = r.Update(ctx, batchjob); err != nil {
+
+		if err = r.Status().Update(ctx, batchjob); err != nil {
 			logger.Error(err, "Failed to update BatchJob Status to InQueue", err)
 			return ctrl.Result{}, err
 		}
+
+		logger.Info("BatchJob is Updated and put into the Queue", "BatchJob", batchjob.Status)
+
 		r.Waiting <- *batchjob
 		return ctrl.Result{}, nil
 
