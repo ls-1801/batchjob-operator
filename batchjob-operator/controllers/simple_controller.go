@@ -20,6 +20,7 @@ import (
 	"container/list"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	corev1 "k8s.io/api/core/v1"
@@ -46,11 +47,16 @@ type SimpleReconciler struct {
 	Scheduled chan batchjobv1alpha1.Simple
 }
 
+type PodDescription struct {
+	PodName  string
+	NodeName string
+}
+
 //+kubebuilder:rbac:groups=batchjob.gcr.io,resources=simples,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=batchjob.gcr.io,resources=simples/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=batchjob.gcr.io,resources=simples/finalizers,verbs=update
 //+kubebuilder:rbac:groups=sparkoperator.k8s.io,resources=sparkapplications,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=core,resources=nodes,verbs=get;list;watch
+//+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -62,27 +68,27 @@ type SimpleReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.9.2/pkg/reconcile
 func (r *SimpleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := ctrllog.FromContext(ctx)
-	log.Info("Reconciler Loop Is Running")
+	logger := ctrllog.FromContext(ctx)
+	logger.Info("Reconciler Loop Is Running")
 	batchjob := &batchjobv1alpha1.Simple{}
 	err := r.Get(ctx, req.NamespacedName, batchjob)
-	log.Info("Get Called")
+	logger.Info("Get Called")
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
-			log.Info("BatchJob resource not found. Ignoring since object must be deleted")
+			logger.Info("BatchJob resource not found. Ignoring since object must be deleted")
 			return ctrl.Result{}, nil
 		}
-		log.Info("Error Not NotFound")
+		logger.Info("Error Not NotFound")
 		// Error reading the object - requeue the request.
-		log.Error(err, "Failed to get BatchJob")
+		logger.Error(err, "Failed to get BatchJob")
 		return ctrl.Result{}, err
 	}
-	log.Info("Found BatchJob", "BatchJob", batchjob)
+	logger.Info("Found BatchJob", "BatchJob", batchjob)
 	if batchjob.Status.InQueue {
-		log.Info("BatchJob is already in Queue no further Actions")
+		logger.Info("BatchJob is already in Queue no further Actions")
 		return ctrl.Result{}, nil
 	}
 
@@ -90,12 +96,12 @@ func (r *SimpleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	found := &sparkv1beta2.SparkApplication{}
 	// Maybe the spark application name should be used here
 	err = r.Get(ctx, types.NamespacedName{Name: batchjob.Name, Namespace: batchjob.Namespace}, found)
-	log.Info("Get Spark")
+	logger.Info("Get Spark")
 	if err != nil && errors.IsNotFound(err) {
-		log.Info("New BatchJob found put in the queue")
+		logger.Info("New BatchJob found put in the queue")
 		batchjob.Status.InQueue = true
 		if err = r.Update(ctx, batchjob); err != nil {
-			log.Error(err, "Failed to update BatchJob Status to InQueue", err)
+			logger.Error(err, "Failed to update BatchJob Status to InQueue", err)
 			return ctrl.Result{}, err
 		}
 		r.Waiting <- *batchjob
@@ -103,39 +109,39 @@ func (r *SimpleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 		// Define a new SparkApplication
 		// dep := r.submitNewSparkApplication(batchjob)
-		// log.Info("Creating a new SparkApplication", "SparkApplication.Namespace", dep.Namespace, "SparkApplication.Name", dep.Name)
+		// logger.Info("Creating a new SparkApplication", "SparkApplication.Namespace", dep.Namespace, "SparkApplication.Name", dep.Name)
 		// err = r.Create(ctx, dep)
 		// if err != nil {
-		// 	log.Error(err, "Failed to create new SparkApplication", "SparkApplication.Namespace", dep.Namespace, "SparkApplication.Name", dep.Name)
+		// 	logger.Error(err, "Failed to create new SparkApplication", "SparkApplication.Namespace", dep.Namespace, "SparkApplication.Name", dep.Name)
 		// 	return ctrl.Result{}, err
 		// }
 		// // SparkApplication created successfully
-		// log.Info("Status is now Running")
+		// logger.Info("Status is now Running")
 		// batchjob.Status.Running = true
 		// if err = r.Update(ctx, batchjob); err != nil {
-		// 	log.Error(err, "Failed to update BatchJob Status to Running", err)
+		// 	logger.Error(err, "Failed to update BatchJob Status to Running", err)
 		// 	return ctrl.Result{}, err
 		// }
 
 	}
 	// your logic here
 	if err != nil {
-		log.Error(err, "Failed to get SparkApplications")
+		logger.Error(err, "Failed to get SparkApplications")
 		return ctrl.Result{}, err
 	}
 
 	if found.Status.AppState.State == sparkv1beta2.CompletedState {
 		batchjob.Status.Running = false
 		// SparkApplication created successfully
-		log.Info("Status is no longer Running")
+		logger.Info("Status is no longer Running")
 		batchjob.Status.Running = true
 		if err = r.Update(ctx, batchjob); err != nil {
-			log.Error(err, "Failed to update BatchJob Status to no longer Running", err)
+			logger.Error(err, "Failed to update BatchJob Status to no longer Running", err)
 			return ctrl.Result{}, err
 		}
 	}
 
-	log.Info("NOT IMPLMENETED")
+	logger.Info("NOT IMPLMENETED")
 
 	return ctrl.Result{}, nil
 }
@@ -152,56 +158,81 @@ type WebServer struct {
 	Client *SimpleReconciler
 }
 
-func (w WebServer) Start(context context.Context) error {
-	var log = ctrllog.FromContext(context)
-	log.Info("Init WebServer on port 9090")
-	http.HandleFunc("/queue", w.GetQueue)
-	http.HandleFunc("/nodes", w.GetNodes)
-	go w.ListenForNewJobs(context)
-	log.Info("Listening on port 9090")
+func (ws WebServer) Start(context context.Context) error {
+	var logger = ctrllog.FromContext(context)
+	logger.Info("Init WebServer on port 9090")
+	http.HandleFunc("/queue", ws.GetQueue)
+	http.HandleFunc("/nodes", ws.GetNodes)
+	go ws.ListenForNewJobs(context)
+	logger.Info("Listening on port 9090")
 	return http.ListenAndServe(":9090", nil)
 }
 
-func (w *WebServer) ListenForNewJobs(context context.Context) {
-	var log = ctrllog.FromContext(context)
-	log.Info("Waiting for New Jobs to be added to the Queue")
+func (ws *WebServer) ListenForNewJobs(context context.Context) {
+	var logger = ctrllog.FromContext(context)
+	logger.Info("Waiting for New Jobs to be added to the Queue")
 	for {
 		select {
 		case <-context.Done():
 			return
-		case newJob := <-w.Client.Waiting:
-			log.Info("Adding new Job to the Queue")
-			w.Client.Queue.PushBack(newJob)
+		case newJob := <-ws.Client.Waiting:
+			logger.Info("Adding new Job to the Queue")
+			ws.Client.Queue.PushBack(newJob)
 		}
 	}
 }
 
+func HandleError(err error) {
+	log.Default().Print("HandleError:", err)
+}
+
+func HandleError1(i int, err error) {
+	log.Default().Print("HandleError: ", "int", i, "error", err)
+}
+
 func (ws *WebServer) GetQueue(w http.ResponseWriter, req *http.Request) {
-	var log = ctrllog.FromContext(req.Context())
-	defer log.Info("Queue Request Done")
-	log.Info("Queue Request Started")
-	log.Info("Current Queue contains", "queue", ws.Client.Queue)
+	var logger = ctrllog.FromContext(req.Context())
+	defer logger.Info("Queue Request Done")
+	logger.Info("Queue Request Started")
+	logger.Info("Current Queue contains", "queue", ws.Client.Queue)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(ws.Client.Queue)
+	HandleError(json.NewEncoder(w).Encode(ws.Client.Queue))
 }
 
 func (ws *WebServer) GetNodes(w http.ResponseWriter, req *http.Request) {
-	var log = ctrllog.FromContext(req.Context())
-	defer log.Info("Node Request Done")
-	log.Info("Node Request Started")
-	var nodeList = &corev1.NodeList{}
-	if err := ws.Client.Client.List(req.Context(), nodeList); err != nil {
-		log.Error(err, "Error getting Nodes")
-		fmt.Fprintln(w, "Error getting the list")
+	var logger = ctrllog.FromContext(req.Context())
+	defer logger.Info("Node Request Done")
+	logger.Info("Node Request Started")
+	var podList = &corev1.PodList{}
+	if err := ws.Client.Client.List(req.Context(), podList); err != nil {
+		logger.Error(err, "Error getting Nodes")
+		HandleError1(fmt.Fprintln(w, "Error getting the list"))
 	}
+
+	var nodeMap = make(map[string][]string)
+
+	for _, pod := range podList.Items {
+		if _, ok := nodeMap[pod.Spec.NodeName]; !ok {
+			nodeMap[pod.Spec.NodeName] = make([]string, 0)
+		}
+
+		if val, ok := nodeMap[pod.Spec.NodeName]; ok {
+			nodeMap[pod.Spec.NodeName] = append(val, pod.Name)
+		}
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(nodeList)
+	HandleError(json.NewEncoder(w).Encode(nodeMap))
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *SimpleReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	mgr.GetLogger().Info("Setup")
-	mgr.Add(WebServer{Client: r})
+	err := mgr.Add(WebServer{Client: r})
+	if err != nil {
+		mgr.GetLogger().Error(err, "Problem adding WebServer to Manager")
+		return err
+	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&batchjobv1alpha1.Simple{}).
 		//Owns(&sparkv1beta2.SparkApplication{}).

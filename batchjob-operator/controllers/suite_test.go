@@ -17,13 +17,13 @@ limitations under the License.
 package controllers
 
 import (
+	"encoding/json"
 	"path/filepath"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
@@ -37,9 +37,30 @@ import (
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
-var cfg *rest.Config
 var k8sClient client.Client
 var testEnv *envtest.Environment
+
+func Test(t *testing.T) {
+
+	var descriptionList [2]PodDescription
+	descriptionList[0] = PodDescription{
+		PodName:  "1",
+		NodeName: "1",
+	}
+
+	descriptionList[1] = PodDescription{
+		PodName:  "2",
+		NodeName: "2",
+	}
+
+	marshal, err := json.Marshal(descriptionList)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	println(string(marshal))
+}
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
