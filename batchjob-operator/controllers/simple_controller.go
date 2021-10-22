@@ -17,7 +17,6 @@ limitations under the License.
 package controllers
 
 import (
-	"container/list"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -41,7 +40,7 @@ import (
 // SimpleReconciler reconciles a Simple object
 type SimpleReconciler struct {
 	client.Client
-	Queue     *list.List
+	Queue     []batchjobv1alpha1.Simple
 	Scheme    *runtime.Scheme
 	Waiting   chan batchjobv1alpha1.Simple
 	Scheduled chan batchjobv1alpha1.Simple
@@ -181,7 +180,7 @@ func (ws *WebServer) ListenForNewJobs(context context.Context) {
 			return
 		case newJob := <-ws.Client.Waiting:
 			logger.Info("Adding new Job to the Queue")
-			ws.Client.Queue.PushBack(newJob)
+			ws.Client.Queue = append(ws.Client.Queue, newJob)
 		}
 	}
 }
