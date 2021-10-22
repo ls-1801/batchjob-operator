@@ -17,13 +17,14 @@ limitations under the License.
 package controllers
 
 import (
-	"container/list"
 	"context"
 	"encoding/json"
 	"github.com/GoogleCloudPlatform/spark-on-k8s-operator/pkg/apis/sparkoperator.k8s.io/v1beta2"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"net/http"
+	"net/http/httptest"
 	"path/filepath"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"testing"
@@ -34,7 +35,6 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
@@ -44,9 +44,6 @@ import (
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
-
-var k8sClient client.Client
-var testEnv *envtest.Environment
 
 func Test(t *testing.T) {
 
@@ -73,13 +70,21 @@ func Test(t *testing.T) {
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
 
-	RunSpecsWithDefaultAndCustomReporters(t,
-		"Controller Suite",
-		[]Reporter{printer.NewlineReporter{}})
+	RunSpecs(t, "Controller Suite")
 }
+
+var (
+	k8sClient client.Client // You'll be using this client in your tests.
+	testEnv   *envtest.Environment
+	ctx       context.Context
+	cancel    context.CancelFunc
+	WS        *WebServer = nil
+)
 
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
+
+	ctx, cancel = context.WithCancel(context.TODO())
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
@@ -106,21 +111,35 @@ var _ = BeforeSuite(func() {
 	})
 	Expect(err).ToNot(HaveOccurred())
 
-	err = (&SimpleReconciler{
+	var reconciler = &SimpleReconciler{
 		Client:    k8sManager.GetClient(),
-		Queue:     list.New(),
+		Queue:     []batchjobv1alpha1.Simple{},
 		Scheme:    k8sManager.GetScheme(),
 		Waiting:   make(chan batchjobv1alpha1.Simple),
 		Scheduled: make(chan batchjobv1alpha1.Simple),
-	}).SetupWithManager(k8sManager)
+		WebServer: WebServer{Client: nil},
+	}
+
+	reconciler.WebServer.Client = reconciler
+	WS = &reconciler.WebServer
+
+	err = reconciler.SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
 	go func() {
-		err = k8sManager.Start(ctrl.SetupSignalHandler())
-		Expect(err).ToNot(HaveOccurred())
+		defer GinkgoRecover()
+		err = k8sManager.Start(ctx)
+		Expect(err).ToNot(HaveOccurred(), "failed to run manager")
 	}()
 
 }, 60)
+
+var _ = AfterSuite(func() {
+	cancel()
+	By("tearing down the test environment")
+	err := testEnv.Stop()
+	Expect(err).NotTo(HaveOccurred())
+})
 
 var _ = Describe("CronJob controller", func() {
 
@@ -145,11 +164,11 @@ var _ = Describe("CronJob controller", func() {
 			},
 		}}
 	var Volumes = []v1.Volume{Volume}
-	Context("When updating BatchJob Status", func() {
+	Context("When creating the BatchJob", func() {
 		It("Should put the BatchJob into the Queue", func() {
-			By("By creating a new CronJob")
+			By("By creating a new BatchJob")
 			ctx := context.Background()
-			cronJob := &batchjobv1alpha1.Simple{
+			batchJob := &batchjobv1alpha1.Simple{
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: "batchjob.gcr.io/v1alpha1",
 					Kind:       "Simple",
@@ -172,13 +191,33 @@ var _ = Describe("CronJob controller", func() {
 					},
 				},
 			}
-			Expect(k8sClient.Create(ctx, cronJob)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, batchJob)).Should(Succeed())
 
-			var _ = AfterSuite(func() {
-				By("tearing down the test environment")
-				err := testEnv.Stop()
+			By("Inspecting the Queue using the HTTP Handler")
+			Eventually(func() ([]batchjobv1alpha1.Simple, error) {
+				req, err := http.NewRequest("GET", "/health-check", nil)
 				Expect(err).NotTo(HaveOccurred())
-			})
+				rr := httptest.NewRecorder()
+				handler := http.HandlerFunc(WS.GetQueue)
+				handler.ServeHTTP(rr, req)
+
+				// Check the status code is what we expect.
+				Expect(rr.Code).Should(BeEquivalentTo(http.StatusOK))
+
+				// Check the response body is what we expect.
+				Expect(rr.Body.String()).ShouldNot(BeEmpty())
+
+				var array = []batchjobv1alpha1.Simple{}
+				err = json.Unmarshal(rr.Body.Bytes(), &array)
+
+				return array, err
+			}, timeout, interval).Should(
+				And(
+					WithTransform(func(p []batchjobv1alpha1.Simple) int { return len(p) },
+						BeIdenticalTo(1)),
+					WithTransform(func(p []batchjobv1alpha1.Simple) string { return p[0].Name },
+						Equal(batchJob)),
+				))
 
 			batchjobLookupKey := types.NamespacedName{Name: BatchJob, Namespace: BatchJobNamespace}
 			createdBatchJob := &batchjobv1alpha1.Simple{}
@@ -201,7 +240,6 @@ var _ = Describe("CronJob controller", func() {
 				}
 				return createdBatchJob.Status.InQueue, nil
 			}, timeout, interval).Should(Equal(true))
-
 		})
 	})
 })

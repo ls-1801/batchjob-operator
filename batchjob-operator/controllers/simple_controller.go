@@ -44,6 +44,7 @@ type SimpleReconciler struct {
 	Scheme    *runtime.Scheme
 	Waiting   chan batchjobv1alpha1.Simple
 	Scheduled chan batchjobv1alpha1.Simple
+	WebServer WebServer
 }
 
 type PodDescription struct {
@@ -186,10 +187,16 @@ func (ws *WebServer) ListenForNewJobs(context context.Context) {
 }
 
 func HandleError(err error) {
+	if err == nil {
+		return
+	}
 	log.Default().Print("HandleError:", err)
 }
 
 func HandleError1(i int, err error) {
+	if err == nil {
+		return
+	}
 	log.Default().Print("HandleError: ", "int", i, "error", err)
 }
 
