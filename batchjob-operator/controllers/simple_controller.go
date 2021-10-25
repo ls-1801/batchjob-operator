@@ -17,13 +17,15 @@ limitations under the License.
 package controllers
 
 import (
+	"container/list"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 
 	"context"
@@ -37,14 +39,19 @@ import (
 	batchjobv1alpha1 "github.com/ls-1801/batchjob-operator/api/v1alpha1"
 )
 
+const TRACE = 100
+
 // SimpleReconciler reconciles a Simple object
 type SimpleReconciler struct {
 	client.Client
-	Queue     []batchjobv1alpha1.Simple
+	Queue     *list.List
 	Scheme    *runtime.Scheme
-	Waiting   chan batchjobv1alpha1.Simple
-	Scheduled chan batchjobv1alpha1.Simple
+	Waiting   chan *batchjobv1alpha1.Simple
 	WebServer WebServer
+}
+
+type JobDescription struct {
+	JobName string
 }
 
 type PodDescription struct {
@@ -69,83 +76,54 @@ type PodDescription struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.9.2/pkg/reconcile
 func (r *SimpleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := ctrllog.FromContext(ctx)
-	logger.Info("Reconciler Loop Is Running")
-	batchjob := &batchjobv1alpha1.Simple{}
-	err := r.Get(ctx, req.NamespacedName, batchjob)
-	logger.Info("Get Called")
+	trace := logger.V(TRACE)
+
+	trace.Info("Find existing BatchJob", "Namespaced Name", req.NamespacedName)
+	batchJob := &batchjobv1alpha1.Simple{}
+	err := r.Get(ctx, req.NamespacedName, batchJob)
+
 	if err != nil {
-		if errors.IsNotFound(err) {
+
+		if k8serrors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
 			logger.Info("BatchJob resource not found. Ignoring since object must be deleted")
 			return ctrl.Result{}, nil
 		}
+
 		logger.Info("Error Not NotFound")
 		// Error reading the object - requeue the request.
 		logger.Error(err, "Failed to get BatchJob")
 		return ctrl.Result{}, err
 	}
-	logger.Info("Found BatchJob", "BatchJob", batchjob)
-	if batchjob.Status.InQueue {
-		logger.Info("BatchJob is already in Queue no further Actions")
+
+	logger.Info("Found BatchJob", "BatchJob", batchJob)
+
+	if batchJob.Status.InQueue || batchJob.Status.Running {
+		logger.Info("BatchJob is already in Queue or Running no further Actions")
 		return ctrl.Result{}, nil
 	}
 
-	// Check if the deployment already exists, if not create a new one
+	sparkApplicationName := types.NamespacedName{Name: batchJob.Name, Namespace: batchJob.Namespace}
+	trace.Info("Find Existing Spark Application", "Namespaced Name", sparkApplicationName)
+	// Check if the SparkApplication already exists, if not create a new one
 	found := &sparkv1beta2.SparkApplication{}
 	// Maybe the spark application name should be used here
-	err = r.Get(ctx, types.NamespacedName{Name: batchjob.Name, Namespace: batchjob.Namespace}, found)
-	logger.Info("Get Spark")
-	if err != nil && errors.IsNotFound(err) {
-		logger.Info("New BatchJob found put in the queue")
-		batchjob.Status.InQueue = true
+	err = r.Get(ctx, sparkApplicationName, found)
 
-		if err = r.Status().Update(ctx, batchjob); err != nil {
-			logger.Error(err, "Failed to update BatchJob Status to InQueue", err)
-			return ctrl.Result{}, err
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			trace.Info("SparkApplication was not found in Cluster")
+			r.Waiting <- batchJob
+			return ctrl.Result{}, nil
 		}
 
-		logger.Info("BatchJob is Updated and put into the Queue", "BatchJob", batchjob.Status)
-
-		r.Waiting <- *batchjob
-		return ctrl.Result{}, nil
-
-		// Define a new SparkApplication
-		// dep := r.submitNewSparkApplication(batchjob)
-		// logger.Info("Creating a new SparkApplication", "SparkApplication.Namespace", dep.Namespace, "SparkApplication.Name", dep.Name)
-		// err = r.Create(ctx, dep)
-		// if err != nil {
-		// 	logger.Error(err, "Failed to create new SparkApplication", "SparkApplication.Namespace", dep.Namespace, "SparkApplication.Name", dep.Name)
-		// 	return ctrl.Result{}, err
-		// }
-		// // SparkApplication created successfully
-		// logger.Info("Status is now Running")
-		// batchjob.Status.Running = true
-		// if err = r.Update(ctx, batchjob); err != nil {
-		// 	logger.Error(err, "Failed to update BatchJob Status to Running", err)
-		// 	return ctrl.Result{}, err
-		// }
-
-	}
-	// your logic here
-	if err != nil {
 		logger.Error(err, "Failed to get SparkApplications")
 		return ctrl.Result{}, err
 	}
 
-	if found.Status.AppState.State == sparkv1beta2.CompletedState {
-		batchjob.Status.Running = false
-		// SparkApplication created successfully
-		logger.Info("Status is no longer Running")
-		batchjob.Status.Running = true
-		if err = r.Update(ctx, batchjob); err != nil {
-			logger.Error(err, "Failed to update BatchJob Status to no longer Running", err)
-			return ctrl.Result{}, err
-		}
-	}
-
-	logger.Info("NOT IMPLMENETED")
+	logger.Info("SparkApplication already Exists. No Further Actions")
 
 	return ctrl.Result{}, nil
 }
@@ -180,8 +158,19 @@ func (ws *WebServer) ListenForNewJobs(context context.Context) {
 		case <-context.Done():
 			return
 		case newJob := <-ws.Client.Waiting:
-			logger.Info("Adding new Job to the Queue")
-			ws.Client.Queue = append(ws.Client.Queue, newJob)
+			newJob.Status.InQueue = true
+			if err := ws.Client.Status().Update(context, newJob); err != nil {
+				logger.Error(err, "Failed to update BatchJob Status to InQueue", err)
+				continue
+			}
+
+			logger.Info(
+				"Adding new Job to the Queue",
+				"Namespaced Name",
+				types.NamespacedName{Name: newJob.Name, Namespace: newJob.Namespace},
+			)
+
+			ws.Client.Queue.PushFront(newJob)
 		}
 	}
 }
@@ -201,38 +190,154 @@ func HandleError1(i int, err error) {
 }
 
 func (ws *WebServer) GetQueue(w http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodGet {
+		http.NotFound(w, req)
+		return
+	}
+
 	var logger = ctrllog.FromContext(req.Context())
 	defer logger.Info("Queue Request Done")
 	logger.Info("Queue Request Started")
-	logger.Info("Current Queue contains", "queue", ws.Client.Queue)
+
+	var jobDescriptions = make([]JobDescription, ws.Client.Queue.Len())
+	var idx = 0
+	for e := ws.Client.Queue.Front(); e != nil; e = e.Next() {
+		jobDescriptions[idx] = JobDescription{
+			JobName: e.Value.(*batchjobv1alpha1.Simple).Name,
+		}
+		idx = idx + 1
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	HandleError(json.NewEncoder(w).Encode(ws.Client.Queue))
+	logger.Info("Current Queue contains", "queue", jobDescriptions)
+
+	HandleError(json.NewEncoder(w).Encode(jobDescriptions))
 }
 
 func (ws *WebServer) GetNodes(w http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodGet {
+		http.NotFound(w, req)
+		return
+	}
+
 	var logger = ctrllog.FromContext(req.Context())
 	defer logger.Info("Node Request Done")
 	logger.Info("Node Request Started")
+
+	var nodeList = &corev1.NodeList{}
+	if err := ws.Client.Client.List(req.Context(), nodeList); err != nil {
+		logger.Error(err, "Error getting Nodes")
+		HandleError1(fmt.Fprintln(w, "Error getting the Node list"))
+	}
+
 	var podList = &corev1.PodList{}
 	if err := ws.Client.Client.List(req.Context(), podList); err != nil {
-		logger.Error(err, "Error getting Nodes")
-		HandleError1(fmt.Fprintln(w, "Error getting the list"))
+		logger.Error(err, "Error getting Pods")
+		HandleError1(fmt.Fprintln(w, "Error getting the Pod list"))
 	}
 
 	var nodeMap = make(map[string][]string)
 
-	for _, pod := range podList.Items {
-		if _, ok := nodeMap[pod.Spec.NodeName]; !ok {
-			nodeMap[pod.Spec.NodeName] = make([]string, 0)
+	for _, node := range nodeList.Items {
+		if _, ok := nodeMap[node.Name]; !ok {
+			nodeMap[node.Name] = []string{}
 		}
+	}
 
+	for _, pod := range podList.Items {
 		if val, ok := nodeMap[pod.Spec.NodeName]; ok {
 			nodeMap[pod.Spec.NodeName] = append(val, pod.Name)
+		} else {
+			logger.Error(errors.New("Node not found: "+pod.Spec.NodeName), "Pod is Scheduled on an unknown Node")
 		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	HandleError(json.NewEncoder(w).Encode(nodeMap))
+}
+
+func (ws WebServer) SubmitSchedule(writer http.ResponseWriter, request *http.Request) {
+	logger := ctrllog.FromContext(request.Context())
+
+	if request.Method != http.MethodPost {
+		http.NotFound(writer, request)
+		return
+	}
+
+	var schedulingDecision = map[string][]string{}
+	err := json.NewDecoder(request.Body).Decode(&schedulingDecision)
+	if err != nil {
+		logger.Error(err, "When decoding Payload")
+		http.Error(writer, "Could not decode JSON", http.StatusBadRequest)
+	}
+
+	var responseMap = map[string][]*sparkv1beta2.SparkApplication{}
+
+	for nodeName, jobsOnNode := range schedulingDecision {
+		for _, jobName := range jobsOnNode {
+			var job = ws.RemoveFromQueue(jobName)
+			if job == nil {
+				http.Error(writer, "Could not find Job: "+jobName, http.StatusNotFound)
+			}
+			err, sparkApp := ws.ScheduleJobOnNode(request.Context(), job, nodeName)
+			if err != nil {
+				http.Error(writer, "Could not create SparkApplication for Job: "+jobName, http.StatusInternalServerError)
+				logger.Error(err, "Failed create SparkApplication. Put BatchJob Back in the Queue", "BatchJob", job)
+				ws.Client.Queue.PushFront(job)
+			}
+
+			job.Status.InQueue = false
+			job.Status.Starting = true
+
+			if err := ws.Client.Status().Update(request.Context(), job); err != nil {
+				logger.Error(err, "Failed to update BatchJob Status to Starting", err)
+				http.Error(writer, "Failed to update BatchJob Status to Starting: "+jobName, http.StatusInternalServerError)
+			}
+
+			responseMap[nodeName] = append(responseMap[nodeName], sparkApp)
+		}
+	}
+
+	HandleError(json.NewEncoder(writer).Encode(responseMap))
+
+}
+
+func (ws WebServer) RemoveFromQueue(jobName string) *batchjobv1alpha1.Simple {
+	for e := ws.Client.Queue.Front(); e != nil; e = e.Next() {
+		if e.Value.(*batchjobv1alpha1.Simple).Name == jobName {
+			return ws.Client.Queue.Remove(e).(*batchjobv1alpha1.Simple)
+		}
+	}
+	return nil
+}
+
+func (ws WebServer) ScheduleJobOnNode(ctx context.Context, job *batchjobv1alpha1.Simple, name string) (error, *sparkv1beta2.SparkApplication) {
+	var spark = &sparkv1beta2.SparkApplication{}
+	spark.Name = job.Name
+	spark.Namespace = "default"
+	spark.Spec = job.Spec.Spec
+
+	annotationMap := make(map[string]string)
+	annotationMap["external-scheduling-desired-node"] = name
+
+	spark.Spec.Driver = sparkv1beta2.DriverSpec{
+		SparkPodSpec: sparkv1beta2.SparkPodSpec{
+			Annotations: annotationMap,
+		},
+	}
+
+	spark.Spec.Executor = sparkv1beta2.ExecutorSpec{
+		SparkPodSpec: sparkv1beta2.SparkPodSpec{
+			Annotations: annotationMap,
+		},
+	}
+
+	if err := ws.Client.Create(ctx, spark); err != nil {
+		ctrllog.FromContext(ctx).Error(err, "Could Not Create SparkApplication")
+		return err, nil
+	}
+
+	return nil, spark
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -245,6 +350,6 @@ func (r *SimpleReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&batchjobv1alpha1.Simple{}).
-		//Owns(&sparkv1beta2.SparkApplication{}).
+		Owns(&sparkv1beta2.SparkApplication{}).
 		Complete(r)
 }

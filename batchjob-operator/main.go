@@ -80,14 +80,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	var waiting = make(chan batchjobv1alpha1.Simple)
-	var scheduled = make(chan batchjobv1alpha1.Simple)
+	var waiting = make(chan *batchjobv1alpha1.Simple)
 	if err = (&controllers.SimpleReconciler{
-		Client:    mgr.GetClient(),
-		Scheme:    mgr.GetScheme(),
-		Queue:     list.New(),
-		Waiting:   waiting,
-		Scheduled: scheduled,
+		Client:  mgr.GetClient(),
+		Scheme:  mgr.GetScheme(),
+		Queue:   list.New(),
+		Waiting: waiting,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Simple")
 		os.Exit(1)

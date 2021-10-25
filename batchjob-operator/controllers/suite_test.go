@@ -17,6 +17,8 @@ limitations under the License.
 package controllers
 
 import (
+	"bytes"
+	"container/list"
 	"context"
 	"encoding/json"
 	"github.com/GoogleCloudPlatform/spark-on-k8s-operator/pkg/apis/sparkoperator.k8s.io/v1beta2"
@@ -79,6 +81,7 @@ var (
 	ctx       context.Context
 	cancel    context.CancelFunc
 	WS        *WebServer = nil
+	TestNode  string     = "test-node"
 )
 
 var _ = BeforeSuite(func() {
@@ -113,10 +116,9 @@ var _ = BeforeSuite(func() {
 
 	var reconciler = &SimpleReconciler{
 		Client:    k8sManager.GetClient(),
-		Queue:     []batchjobv1alpha1.Simple{},
+		Queue:     list.New(),
 		Scheme:    k8sManager.GetScheme(),
-		Waiting:   make(chan batchjobv1alpha1.Simple),
-		Scheduled: make(chan batchjobv1alpha1.Simple),
+		Waiting:   make(chan *batchjobv1alpha1.Simple),
 		WebServer: WebServer{Client: nil},
 	}
 
@@ -125,6 +127,20 @@ var _ = BeforeSuite(func() {
 
 	err = reconciler.SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
+
+	node := &v1.Node{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Node",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: TestNode,
+		},
+		Spec: v1.NodeSpec{
+			PodCIDR: "10.0.0.0/21",
+		},
+	}
+	Expect(k8sClient.Create(ctx, node)).Should(Succeed())
 
 	go func() {
 		defer GinkgoRecover()
@@ -150,24 +166,19 @@ var _ = Describe("CronJob controller", func() {
 		timeout           = time.Second * 10
 		interval          = time.Millisecond * 250
 	)
-	var ImageName = "gcr.io/spark-operator/spark:v3.1.1"
-	var ImagePullPolicy = "Always"
-	var MainClass = "org.apache.spark.examples.SparkPi"
-	var MainClassApplicationFile = "local:///opt/spark/examples/jars/spark-examples_2.12-3.1.1.jar"
-	var HostPathType = v1.HostPathType("Directory")
-	var Volume = v1.Volume{
-		Name: "test-volume",
-		VolumeSource: v1.VolumeSource{
-			HostPath: &v1.HostPathVolumeSource{
-				Path: "/path",
-				Type: &HostPathType,
-			},
-		}}
-	var Volumes = []v1.Volume{Volume}
+
 	Context("When creating the BatchJob", func() {
+
 		It("Should put the BatchJob into the Queue", func() {
 			By("By creating a new BatchJob")
 			ctx := context.Background()
+			var (
+				ImageName                = "gcr.io/spark-operator/spark:v3.1.1"
+				ImagePullPolicy          = "Always"
+				MainClass                = "org.apache.spark.examples.SparkPi"
+				MainClassApplicationFile = "local:///opt/spark/examples/jars/spark-examples_2.12-3.1.1.jar"
+			)
+
 			batchJob := &batchjobv1alpha1.Simple{
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: "batchjob.gcr.io/v1alpha1",
@@ -187,14 +198,13 @@ var _ = Describe("CronJob controller", func() {
 						ImagePullPolicy:     &ImagePullPolicy,
 						MainClass:           &MainClass,
 						MainApplicationFile: &MainClassApplicationFile,
-						Volumes:             Volumes,
 					},
 				},
 			}
 			Expect(k8sClient.Create(ctx, batchJob)).Should(Succeed())
 
 			By("Inspecting the Queue using the HTTP Handler")
-			Eventually(func() ([]batchjobv1alpha1.Simple, error) {
+			Eventually(func() ([]JobDescription, error) {
 				req, err := http.NewRequest("GET", "/health-check", nil)
 				Expect(err).NotTo(HaveOccurred())
 				rr := httptest.NewRecorder()
@@ -207,16 +217,16 @@ var _ = Describe("CronJob controller", func() {
 				// Check the response body is what we expect.
 				Expect(rr.Body.String()).ShouldNot(BeEmpty())
 
-				var array = []batchjobv1alpha1.Simple{}
+				var array []JobDescription
 				err = json.Unmarshal(rr.Body.Bytes(), &array)
 
 				return array, err
 			}, timeout, interval).Should(
 				And(
-					WithTransform(func(p []batchjobv1alpha1.Simple) int { return len(p) },
+					WithTransform(func(p []JobDescription) int { return len(p) },
 						BeIdenticalTo(1)),
-					WithTransform(func(p []batchjobv1alpha1.Simple) string { return p[0].Name },
-						Equal(batchJob)),
+					WithTransform(func(p []JobDescription) string { return p[0].JobName },
+						Equal(BatchJob)),
 				))
 
 			batchjobLookupKey := types.NamespacedName{Name: BatchJob, Namespace: BatchJobNamespace}
@@ -239,7 +249,132 @@ var _ = Describe("CronJob controller", func() {
 					return false, err
 				}
 				return createdBatchJob.Status.InQueue, nil
-			}, timeout, interval).Should(Equal(true))
+			}, timeout, interval).Should(BeTrue())
+		})
+
+		It("Should release the Job from the Queue", func() {
+			By("Getting Node Infos")
+			Eventually(func() (map[string][]string, error) {
+				req, err := http.NewRequest("GET", "/nodes", nil)
+				Expect(err).NotTo(HaveOccurred())
+				rr := httptest.NewRecorder()
+				handler := http.HandlerFunc(WS.GetNodes)
+				handler.ServeHTTP(rr, req)
+
+				// Check the status code is what we expect.
+				Expect(rr.Code).Should(BeEquivalentTo(http.StatusOK))
+				Expect(rr.Body.String()).ShouldNot(BeEmpty())
+
+				var nodeMap = map[string][]string{}
+				err = json.Unmarshal(rr.Body.Bytes(), &nodeMap)
+
+				return nodeMap, err
+			}, timeout, interval).
+				Should(HaveKeyWithValue(TestNode, BeEmpty()))
+
+			By("Verifying that the Queue contains one BatchJob")
+			Eventually(func() ([]JobDescription, error) {
+				req, err := http.NewRequest("GET", "/queue", nil)
+				Expect(err).NotTo(HaveOccurred())
+				rr := httptest.NewRecorder()
+				handler := http.HandlerFunc(WS.GetQueue)
+				handler.ServeHTTP(rr, req)
+
+				// Check the status code is what we expect.
+				Expect(rr.Code).Should(BeEquivalentTo(http.StatusOK))
+
+				// Check the response body is what we expect.
+				Expect(rr.Body.String()).ShouldNot(BeEmpty())
+
+				var array []JobDescription
+				err = json.Unmarshal(rr.Body.Bytes(), &array)
+
+				return array, err
+			}, timeout, interval).Should(
+				And(
+					WithTransform(func(p []JobDescription) int { return len(p) },
+						BeIdenticalTo(1)),
+					WithTransform(func(p []JobDescription) string { return p[0].JobName },
+						Equal(BatchJob)),
+				))
+
+			By("Submitting a SchedulingDecision")
+			var desiredScheduling = make(map[string][]string)
+			desiredScheduling[TestNode] = []string{BatchJob}
+			payloadBuf := new(bytes.Buffer)
+			err := json.NewEncoder(payloadBuf).Encode(desiredScheduling)
+			Expect(err).NotTo(HaveOccurred())
+
+			func() {
+				req, err := http.NewRequest("POST", "/schedule", payloadBuf)
+				Expect(err).NotTo(HaveOccurred())
+				rr := httptest.NewRecorder()
+				handler := http.HandlerFunc(WS.SubmitSchedule)
+				handler.ServeHTTP(rr, req)
+
+				// Check the status code is what we expect.
+				Expect(rr.Code).Should(BeEquivalentTo(http.StatusOK))
+
+				// Check the response body is what we expect.
+				Expect(rr.Body.String()).ShouldNot(BeEmpty())
+
+				var array []JobDescription
+				err = json.Unmarshal(rr.Body.Bytes(), &array)
+			}()
+
+			By("Checking that a new SparkApplication was Created")
+			Eventually(func() (*v1beta2.SparkApplication, error) {
+				var sparkApp = &v1beta2.SparkApplication{}
+				err := k8sClient.Get(ctx, types.NamespacedName{Name: BatchJob, Namespace: BatchJobNamespace}, sparkApp)
+				return sparkApp, err
+			}).Should(And(
+				Not(BeNil()),
+				WithTransform(func(sparkApp *v1beta2.SparkApplication) map[string]string {
+					return sparkApp.Spec.Driver.SparkPodSpec.Annotations
+				}, HaveKeyWithValue("external-scheduling-desired-node", TestNode)),
+				WithTransform(func(sparkApp *v1beta2.SparkApplication) map[string]string {
+					return sparkApp.Spec.Executor.SparkPodSpec.Annotations
+				}, HaveKeyWithValue("external-scheduling-desired-node", TestNode)),
+			))
+
+			By("Checking that the Queue is now Empty")
+			Eventually(func() ([]JobDescription, error) {
+				req, err := http.NewRequest("GET", "/queue", nil)
+				Expect(err).NotTo(HaveOccurred())
+				rr := httptest.NewRecorder()
+				handler := http.HandlerFunc(WS.GetQueue)
+				handler.ServeHTTP(rr, req)
+
+				// Check the status code is what we expect.
+				Expect(rr.Code).Should(BeEquivalentTo(http.StatusOK))
+
+				// Check the response body is what we expect.
+				Expect(rr.Body.String()).ShouldNot(BeEmpty())
+
+				var array []JobDescription
+				err = json.Unmarshal(rr.Body.Bytes(), &array)
+
+				return array, err
+			}, timeout, interval).Should(BeEmpty())
+
+			By("By checking the BatchJob is now Starting")
+			Eventually(func() (*batchjobv1alpha1.SimpleStatus, error) {
+				batchjobLookupKey := types.NamespacedName{Name: BatchJob, Namespace: BatchJobNamespace}
+				createdBatchJob := batchjobv1alpha1.Simple{}
+				err := k8sClient.Get(ctx, batchjobLookupKey, &createdBatchJob)
+				if err != nil {
+					return nil, err
+				}
+				return &createdBatchJob.Status, nil
+			}, timeout, interval).Should(And(
+				WithTransform(func(status *batchjobv1alpha1.SimpleStatus) bool {
+					return status.InQueue
+				}, BeFalse()),
+				WithTransform(func(status *batchjobv1alpha1.SimpleStatus) bool {
+					return status.Starting
+				}, BeTrue()),
+			))
+
 		})
 	})
 })
