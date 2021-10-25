@@ -39,9 +39,9 @@ type SimpleSpec struct {
 type SimpleStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	InQueue bool                           `json:"inQueue"`
-	Running bool                           `json:"running"`
-	Status  v1beta2.SparkApplicationStatus `json:"status,omitempty"`
+	InQueue  bool `json:"inQueue"`
+	Running  bool `json:"running"`
+	Starting bool `json:"starting"`
 }
 
 //+kubebuilder:object:root=true
