@@ -100,7 +100,9 @@ func (r *SimpleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	logger.Info("Found BatchJob", "BatchJob", batchJob)
 
-	if batchJob.Status.InQueue || batchJob.Status.Running {
+	if batchJob.Status.State == batchjobv1alpha1.RunningState ||
+		batchJob.Status.State == batchjobv1alpha1.InQueueState ||
+		batchJob.Status.State == batchjobv1alpha1.CompletedState {
 		logger.Info("BatchJob is already in Queue or Running no further Actions")
 		return ctrl.Result{}, nil
 	}
@@ -286,8 +288,7 @@ func (ws WebServer) SubmitSchedule(writer http.ResponseWriter, request *http.Req
 				ws.Client.Queue.PushFront(job)
 			}
 
-			job.Status.InQueue = false
-			job.Status.Starting = true
+			job.Status.State = batchjobv1alpha1.SubmittedState
 
 			if err := ws.Client.Status().Update(request.Context(), job); err != nil {
 				logger.Error(err, "Failed to update BatchJob Status to Starting", err)

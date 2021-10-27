@@ -39,10 +39,26 @@ type SimpleSpec struct {
 type SimpleStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	InQueue  bool `json:"inQueue"`
-	Running  bool `json:"running"`
-	Starting bool `json:"starting"`
+	State ApplicationStateType `json:"state"`
 }
+
+// ApplicationStateType represents the type of the current state of an application.
+type ApplicationStateType string
+
+const (
+	NewState              ApplicationStateType = ""
+	SubmittedState        ApplicationStateType = "SUBMITTED"
+	InQueueState          ApplicationStateType = "QUEUE"
+	RunningState          ApplicationStateType = "RUNNING"
+	CompletedState        ApplicationStateType = "COMPLETED"
+	FailedState           ApplicationStateType = "FAILED"
+	FailedSubmissionState ApplicationStateType = "SUBMISSION_FAILED"
+	PendingRerunState     ApplicationStateType = "PENDING_RERUN"
+	InvalidatingState     ApplicationStateType = "INVALIDATING"
+	SucceedingState       ApplicationStateType = "SUCCEEDING"
+	FailingState          ApplicationStateType = "FAILING"
+	UnknownState          ApplicationStateType = "UNKNOWN"
+)
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status

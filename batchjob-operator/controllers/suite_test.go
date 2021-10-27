@@ -243,13 +243,13 @@ var _ = Describe("CronJob controller", func() {
 			Expect(createdBatchJob.Spec.Foo).Should(Equal("SomeThing"))
 
 			By("By checking the BatchJob is in Queue")
-			Eventually(func() (bool, error) {
+			Eventually(func() (batchjobv1alpha1.ApplicationStateType, error) {
 				err := k8sClient.Get(ctx, batchjobLookupKey, createdBatchJob)
 				if err != nil {
-					return false, err
+					return batchjobv1alpha1.FailedSubmissionState, err
 				}
-				return createdBatchJob.Status.InQueue, nil
-			}, timeout, interval).Should(BeTrue())
+				return createdBatchJob.Status.State, nil
+			}, timeout, interval).Should(BeEquivalentTo(batchjobv1alpha1.InQueueState))
 		})
 
 		It("Should release the Job from the Queue", func() {
@@ -366,14 +366,11 @@ var _ = Describe("CronJob controller", func() {
 					return nil, err
 				}
 				return &createdBatchJob.Status, nil
-			}, timeout, interval).Should(And(
-				WithTransform(func(status *batchjobv1alpha1.SimpleStatus) bool {
-					return status.InQueue
-				}, BeFalse()),
-				WithTransform(func(status *batchjobv1alpha1.SimpleStatus) bool {
-					return status.Starting
-				}, BeTrue()),
-			))
+			}, timeout, interval).Should(
+				WithTransform(func(status *batchjobv1alpha1.SimpleStatus) batchjobv1alpha1.ApplicationStateType {
+					return status.State
+				}, BeEquivalentTo(batchjobv1alpha1.SubmittedState)),
+			)
 
 		})
 	})
