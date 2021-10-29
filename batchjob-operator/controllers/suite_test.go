@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"bytes"
-	"container/list"
 	"context"
 	"encoding/json"
 	"github.com/GoogleCloudPlatform/spark-on-k8s-operator/pkg/apis/sparkoperator.k8s.io/v1beta2"
@@ -116,14 +115,12 @@ var _ = BeforeSuite(func() {
 
 	var reconciler = &SimpleReconciler{
 		Client:    k8sManager.GetClient(),
-		Queue:     list.New(),
 		Scheme:    k8sManager.GetScheme(),
-		Waiting:   make(chan *batchjobv1alpha1.Simple),
-		WebServer: WebServer{Client: nil},
+		WebServer: nil,
 	}
 
-	reconciler.WebServer.Client = reconciler
-	WS = &reconciler.WebServer
+	WS = NewWebServer(reconciler)
+	reconciler.WebServer = WS
 
 	err = reconciler.SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
@@ -170,6 +167,26 @@ var _ = Describe("CronJob controller", func() {
 	Context("When creating the BatchJob", func() {
 
 		It("Should put the BatchJob into the Queue", func() {
+			By("Verifying that the Queue is Empty")
+			Eventually(func() ([]JobDescription, error) {
+				req, err := http.NewRequest("GET", "/queue", nil)
+				Expect(err).NotTo(HaveOccurred())
+				rr := httptest.NewRecorder()
+				handler := http.HandlerFunc(WS.GetQueue)
+				handler.ServeHTTP(rr, req)
+
+				// Check the status code is what we expect.
+				Expect(rr.Code).Should(BeEquivalentTo(http.StatusOK))
+
+				// Check the response body is what we expect.
+				Expect(rr.Body.String()).ShouldNot(BeEmpty())
+
+				var array []JobDescription
+				err = json.Unmarshal(rr.Body.Bytes(), &array)
+
+				return array, err
+			}, timeout, interval).Should(BeEmpty())
+
 			By("By creating a new BatchJob")
 			ctx := context.Background()
 			var (
@@ -225,7 +242,7 @@ var _ = Describe("CronJob controller", func() {
 				And(
 					WithTransform(func(p []JobDescription) int { return len(p) },
 						BeIdenticalTo(1)),
-					WithTransform(func(p []JobDescription) string { return p[0].JobName },
+					WithTransform(func(p []JobDescription) string { return p[0].JobName.Name },
 						Equal(BatchJob)),
 				))
 
@@ -294,13 +311,13 @@ var _ = Describe("CronJob controller", func() {
 				And(
 					WithTransform(func(p []JobDescription) int { return len(p) },
 						BeIdenticalTo(1)),
-					WithTransform(func(p []JobDescription) string { return p[0].JobName },
+					WithTransform(func(p []JobDescription) string { return p[0].JobName.Name },
 						Equal(BatchJob)),
 				))
 
 			By("Submitting a SchedulingDecision")
-			var desiredScheduling = make(map[string][]string)
-			desiredScheduling[TestNode] = []string{BatchJob}
+			var desiredScheduling = make(map[string][]types.NamespacedName)
+			desiredScheduling[TestNode] = []types.NamespacedName{{Name: BatchJob, Namespace: BatchJobNamespace}}
 			payloadBuf := new(bytes.Buffer)
 			err := json.NewEncoder(payloadBuf).Encode(desiredScheduling)
 			Expect(err).NotTo(HaveOccurred())

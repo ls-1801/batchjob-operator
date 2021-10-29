@@ -17,7 +17,6 @@ limitations under the License.
 package main
 
 import (
-	"container/list"
 	"flag"
 	"os"
 
@@ -80,12 +79,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	var waiting = make(chan *batchjobv1alpha1.Simple)
 	if err = (&controllers.SimpleReconciler{
-		Client:  mgr.GetClient(),
-		Scheme:  mgr.GetScheme(),
-		Queue:   list.New(),
-		Waiting: waiting,
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Simple")
 		os.Exit(1)
