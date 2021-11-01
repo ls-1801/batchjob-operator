@@ -20,7 +20,6 @@ func NewJobQueue() *JobQueue {
 func (jq *JobQueue) removeFromQueue(jobName types.NamespacedName) *types.NamespacedName {
 	jq.QueueMutex.Lock()
 	defer func() { jq.QueueMutex.Unlock() }()
-
 	for i, v := range jq.Queue {
 		if v.Name == jobName.Name && v.Namespace == jobName.Namespace {
 			jq.Queue[i] = jq.Queue[len(jq.Queue)-1]
@@ -45,9 +44,9 @@ func (jq *JobQueue) copyQueue() []JobDescription {
 	return jobDescriptions
 }
 
-func (jq *JobQueue) addJobToQueue(jobName types.NamespacedName) {
+func (jq *JobQueue) addJobToQueue(job types.NamespacedName) {
 	jq.QueueMutex.Lock()
 	defer func() { jq.QueueMutex.Unlock() }()
 
-	jq.Queue = append(jq.Queue, jobName)
+	jq.Queue = append(jq.Queue, job)
 }

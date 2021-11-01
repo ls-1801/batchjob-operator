@@ -47,7 +47,7 @@ type ApplicationStateType string
 
 const (
 	NewState              ApplicationStateType = ""
-	SubmittedState        ApplicationStateType = "SUBMITTED"
+	SubmittedState        ApplicationStateType = "SUBMITTED" // Waiting for Spark to be Submitted
 	InQueueState          ApplicationStateType = "QUEUE"
 	RunningState          ApplicationStateType = "RUNNING"
 	CompletedState        ApplicationStateType = "COMPLETED"

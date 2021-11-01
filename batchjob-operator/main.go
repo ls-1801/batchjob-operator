@@ -18,6 +18,7 @@ package main
 
 import (
 	"flag"
+	"k8s.io/apimachinery/pkg/types"
 	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -79,10 +80,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.SimpleReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
+	var reconciler = &controllers.SimpleReconciler{
+		Client:      mgr.GetClient(),
+		Scheme:      mgr.GetScheme(),
+		ManagedJobs: map[types.NamespacedName]*batchjobv1alpha1.Simple{},
+	}
+	reconciler.SparkCtrl = controllers.NewSparkController(reconciler)
+
+	if err = (reconciler).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Simple")
 		os.Exit(1)
 	}

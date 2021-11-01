@@ -114,13 +114,17 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 
 	var reconciler = &SimpleReconciler{
-		Client:    k8sManager.GetClient(),
-		Scheme:    k8sManager.GetScheme(),
-		WebServer: nil,
+		Client:      k8sManager.GetClient(),
+		Scheme:      k8sManager.GetScheme(),
+		ManagedJobs: map[types.NamespacedName]*batchjobv1alpha1.Simple{},
+		SparkCtrl:   nil,
+		WebServer:   nil,
 	}
 
 	WS = NewWebServer(reconciler)
 	reconciler.WebServer = WS
+
+	reconciler.SparkCtrl = NewSparkController(reconciler)
 
 	err = reconciler.SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
@@ -387,6 +391,36 @@ var _ = Describe("CronJob controller", func() {
 				WithTransform(func(status *batchjobv1alpha1.SimpleStatus) batchjobv1alpha1.ApplicationStateType {
 					return status.State
 				}, BeEquivalentTo(batchjobv1alpha1.SubmittedState)),
+			)
+
+			By("By Mocking the SparkOperator")
+			var sparkApp = &v1beta2.SparkApplication{}
+			err = k8sClient.Get(ctx, types.NamespacedName{Name: BatchJob, Namespace: BatchJobNamespace}, sparkApp)
+			Expect(err).ToNot(HaveOccurred())
+
+			sparkApp.Status.AppState.State = v1beta2.SubmittedState
+			err = k8sClient.Status().Update(ctx, sparkApp)
+			Expect(err).ToNot(HaveOccurred())
+
+			time.Sleep(1000)
+
+			sparkApp.Status.AppState.State = v1beta2.RunningState
+			err = k8sClient.Status().Update(ctx, sparkApp)
+			Expect(err).ToNot(HaveOccurred())
+
+			By("By checking the BatchJob is now Running")
+			Eventually(func() (*batchjobv1alpha1.SimpleStatus, error) {
+				batchjobLookupKey := types.NamespacedName{Name: BatchJob, Namespace: BatchJobNamespace}
+				createdBatchJob := batchjobv1alpha1.Simple{}
+				err := k8sClient.Get(ctx, batchjobLookupKey, &createdBatchJob)
+				if err != nil {
+					return nil, err
+				}
+				return &createdBatchJob.Status, nil
+			}, timeout, interval).Should(
+				WithTransform(func(status *batchjobv1alpha1.SimpleStatus) batchjobv1alpha1.ApplicationStateType {
+					return status.State
+				}, BeEquivalentTo(batchjobv1alpha1.RunningState)),
 			)
 
 		})

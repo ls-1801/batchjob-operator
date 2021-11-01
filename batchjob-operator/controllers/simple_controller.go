@@ -17,11 +17,13 @@ limitations under the License.
 package controllers
 
 import (
+	"context"
+	"errors"
+	"github.com/google/go-cmp/cmp"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"log"
-
-	"context"
+	"strconv"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -37,8 +39,10 @@ const TRACE = 100
 // SimpleReconciler reconciles a Simple object
 type SimpleReconciler struct {
 	client.Client
-	Scheme    *runtime.Scheme
-	WebServer *WebServer
+	Scheme      *runtime.Scheme
+	WebServer   *WebServer
+	ManagedJobs map[types.NamespacedName]*batchjobv1alpha1.Simple
+	SparkCtrl   *SparkController
 }
 
 type JobDescription struct {
@@ -67,57 +71,142 @@ type PodDescription struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.9.2/pkg/reconcile
 func (r *SimpleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := ctrllog.FromContext(ctx)
-	trace := logger.V(TRACE)
 
-	trace.Info("Find existing BatchJob", "Namespaced Name", req.NamespacedName)
-	batchJob := &batchjobv1alpha1.Simple{}
-	err := r.Get(ctx, req.NamespacedName, batchJob)
+	logger.Info("================ LOOP TRIGGERED ============")
+
+	var err, batchJob = r.getBatchJob(ctx, req.NamespacedName)
 
 	if err != nil {
-
 		if k8serrors.IsNotFound(err) {
-			// Request object not found, could have been deleted after reconcile request.
-			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
-			// Return and don't requeue
+			delete(r.ManagedJobs, req.NamespacedName)
+			r.WebServer.JobQueue.removeFromQueue(req.NamespacedName)
 			logger.Info("BatchJob resource not found. Ignoring since object must be deleted")
 			return ctrl.Result{}, nil
 		}
-
-		logger.Info("Error Not NotFound")
-		// Error reading the object - requeue the request.
-		logger.Error(err, "Failed to get BatchJob")
 		return ctrl.Result{}, err
 	}
 
-	logger.Info("Found BatchJob", "BatchJob", batchJob)
+	switch r.hasChanged(ctx, batchJob) {
+	case NewJob:
+		return r.handleNewJob(ctx, batchJob)
+	case NoChange:
+		switch r.SparkCtrl.hasSparkChanged(ctx, batchJob) {
+		case SparkNoChange:
+			logger.Error(errors.New("unexpected loop trigger"), "Loop triggered without change")
+			return ctrl.Result{}, nil
+		case SparkCreated:
+			logger.Info("SparkApplication Created")
+			HandleError(r.UpdateJobStatus(ctx, batchJob, batchjobv1alpha1.SubmittedState))
+		case SparkRunning:
+			logger.Info("SparkApplication is Now Running")
+			HandleError(r.UpdateJobStatus(ctx, batchJob, batchjobv1alpha1.RunningState))
+		default:
+			logger.Info("Spark did something")
 
-	if batchJob.Status.State == batchjobv1alpha1.RunningState ||
-		batchJob.Status.State == batchjobv1alpha1.InQueueState ||
-		batchJob.Status.State == batchjobv1alpha1.CompletedState {
-		logger.Info("BatchJob is already in Queue or Running no further Actions")
+		}
+	case InQueue:
+		logger.Info("Job is now in Queue", "job", req.NamespacedName)
+	case Submitted:
+		logger.Info("Job is now in Submitted", "job", req.NamespacedName)
+	case Running:
+		logger.Info("Job is now in Running", "job", req.NamespacedName)
+	default:
+		logger.Error(errors.New("illegal state transition"), "Job Made in illegal State Transition")
 		return ctrl.Result{}, nil
 	}
 
-	sparkApplicationName := types.NamespacedName{Name: batchJob.Name, Namespace: batchJob.Namespace}
-	trace.Info("Find Existing Spark Application", "Namespaced Name", sparkApplicationName)
-	// Check if the SparkApplication already exists, if not create a new one
-	found := &sparkv1beta2.SparkApplication{}
-	// Maybe the spark application name should be used here
-	err = r.Get(ctx, sparkApplicationName, found)
+	return ctrl.Result{}, nil
+}
 
-	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			trace.Info("SparkApplication was not found in Cluster")
-			return ctrl.Result{}, r.WebServer.SubmitJobToQueue(ctx, batchJob)
+func (r *SimpleReconciler) manageJob(ctx context.Context, batchJob *batchjobv1alpha1.Simple) {
+
+	var nn = types.NamespacedName{Name: batchJob.Name, Namespace: batchJob.Namespace}
+	if old, ok := r.ManagedJobs[nn]; ok {
+		if r.compareResourceVersion(ctx, old.ResourceVersion, batchJob.ResourceVersion) {
+			ctrllog.FromContext(ctx).Info("Managed Job changes from Version "+old.ResourceVersion+" to "+batchJob.ResourceVersion,
+				"name", nn)
+		} else {
+			ctrllog.FromContext(ctx).Info("Managed Job versions did not change from: "+old.ResourceVersion,
+				"name", nn)
 		}
-
-		logger.Error(err, "Failed to get SparkApplications")
-		return ctrl.Result{}, err
+	} else {
+		ctrllog.FromContext(ctx).Info("Manage new Job", "name", nn)
 	}
 
-	logger.Info("SparkApplication already Exists. No Further Actions")
+	r.ManagedJobs[nn] = batchJob
+}
 
-	return ctrl.Result{}, nil
+const (
+	NewJob = iota
+	Submitted
+	Running
+	InQueue
+	NoChange
+	UnknownChange
+)
+
+func (r *SimpleReconciler) compareResourceVersion(ctx context.Context, rv1 string, rv2 string) bool {
+	oldRV, err := strconv.Atoi(rv1)
+	if err != nil {
+		ctrllog.FromContext(ctx).Error(err, "Could not extract old Resource Version")
+	}
+	newRV, err := strconv.Atoi(rv2)
+	if err != nil {
+		ctrllog.FromContext(ctx).Error(err, "Could not extract new Resource Version")
+	}
+
+	return oldRV < newRV
+}
+
+func (r *SimpleReconciler) hasChanged(ctx context.Context, job *batchjobv1alpha1.Simple) int {
+	defer func() { r.manageJob(ctx, job) }()
+	if old, ok := r.ManagedJobs[types.NamespacedName{
+		Name:      job.Name,
+		Namespace: job.Namespace,
+	}]; ok {
+		ctrllog.FromContext(ctx).Info("Check for differences", "old", *old, "new", *job)
+
+		if r.compareResourceVersion(ctx, old.ResourceVersion, job.ResourceVersion) {
+			if !cmp.Equal(old.Status, job.Status) {
+				return toTransitionEnum(ctx, old.Status.State, job.Status.State)
+			} else {
+				return UnknownChange
+			}
+		}
+
+		return NoChange
+
+	}
+
+	ctrllog.FromContext(ctx).Info("Job is new", "new", types.NamespacedName{
+		Name:      job.Name,
+		Namespace: job.Namespace,
+	})
+	return NewJob
+}
+
+func toTransitionEnum(ctx context.Context, before batchjobv1alpha1.ApplicationStateType, after batchjobv1alpha1.ApplicationStateType) int {
+	if before == batchjobv1alpha1.NewState && after == batchjobv1alpha1.InQueueState {
+		return InQueue
+	}
+
+	if before == batchjobv1alpha1.InQueueState && after == batchjobv1alpha1.SubmittedState {
+		return Submitted
+	}
+
+	if before == batchjobv1alpha1.SubmittedState && after == batchjobv1alpha1.RunningState {
+		return Running
+	}
+
+	ctrllog.FromContext(ctx).Info("Can't figure out transition!", "before", before, "after", after)
+	return UnknownChange
+}
+
+func (r *SimpleReconciler) getBatchJob(context context.Context, name types.NamespacedName) (error, *batchjobv1alpha1.Simple) {
+	var batchJob = &batchjobv1alpha1.Simple{}
+	ctrllog.FromContext(context).V(TRACE).Info("Get BatchJob", "Namespaced-Name", name)
+	var err = r.Get(context, name, batchJob)
+	return err, batchJob
 }
 
 func HandleError(err error) {
@@ -146,4 +235,54 @@ func (r *SimpleReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&batchjobv1alpha1.Simple{}).
 		Owns(&sparkv1beta2.SparkApplication{}).
 		Complete(r)
+}
+
+func (r *SimpleReconciler) handleNewJob(ctx context.Context, job *batchjobv1alpha1.Simple) (ctrl.Result, error) {
+	r.manageJob(ctx, job)
+	sparkApplicationName := types.NamespacedName{Name: job.Name, Namespace: job.Namespace}
+	ctrllog.FromContext(ctx).V(TRACE).Info("Find Existing Spark Application", "Namespaced Name", sparkApplicationName)
+	// Check if the SparkApplication already exists, if not create a new one
+	found := &sparkv1beta2.SparkApplication{}
+	// Maybe the spark application name should be used here
+	err := r.Get(ctx, sparkApplicationName, found)
+
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			ctrllog.FromContext(ctx).V(TRACE).Info("SparkApplication was not found in Cluster")
+			err := r.WebServer.SubmitJobToQueue(ctx, types.NamespacedName{
+				Namespace: job.Namespace,
+				Name:      job.Name,
+			})
+
+			if err != nil {
+				ctrllog.FromContext(ctx).Error(err, "Failed to add the Job to the JobQueue")
+				return ctrl.Result{}, err
+			}
+
+			err = r.UpdateJobStatus(ctx, job, batchjobv1alpha1.InQueueState)
+			if err != nil {
+				ctrllog.FromContext(ctx).Error(err, "Failed to update BatchJob Status to InQueue")
+				return ctrl.Result{}, err
+			}
+
+			return ctrl.Result{}, nil
+
+		}
+
+		ctrllog.FromContext(ctx).Error(err, "Failed to get SparkApplications")
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *SimpleReconciler) UpdateJobStatus(context context.Context, job *batchjobv1alpha1.Simple, state batchjobv1alpha1.ApplicationStateType) error {
+	var copiedJob = job.DeepCopy()
+	copiedJob.Status.State = state
+	ctrllog.FromContext(context).Info("Updating Status of Job", "job", copiedJob, "New-State", state)
+	if err := r.Status().Update(context, copiedJob); err != nil {
+		ctrllog.FromContext(context).Error(err, "Failed to update BatchJob Status", err)
+		return err
+	}
+	return nil
 }

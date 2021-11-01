@@ -10,6 +10,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"net/http"
+	ctrl "sigs.k8s.io/controller-runtime"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -31,22 +32,14 @@ func (ws *WebServer) Start(context context.Context) error {
 	return http.ListenAndServe(":9090", nil)
 }
 
-func (ws *WebServer) SubmitJobToQueue(context context.Context, newJob *batchjobv1alpha1.Simple) error {
+func (ws *WebServer) SubmitJobToQueue(context context.Context, newJob types.NamespacedName) error {
 	var logger = ctrllog.FromContext(context)
-
-	newJob.Status.State = batchjobv1alpha1.InQueueState
-	if err := ws.Client.Status().Update(context, newJob); err != nil {
-		logger.Error(err, "Failed to update BatchJob Status to InQueue")
-		return err
-	}
 
 	logger.Info(
 		"Adding new Job to the Queue",
-		"Namespaced Name",
-		types.NamespacedName{Name: newJob.Name, Namespace: newJob.Namespace},
 	)
 
-	ws.JobQueue.addJobToQueue(types.NamespacedName{Name: newJob.Name, Namespace: newJob.Namespace})
+	ws.JobQueue.addJobToQueue(newJob)
 	return nil
 }
 
@@ -126,16 +119,21 @@ func (ws *WebServer) SubmitSchedule(writer http.ResponseWriter, request *http.Re
 		return
 	}
 
+	logger.Info("Applying scheduling decisions", "scheduling-decision", schedulingDecision)
+
 	var responseMap = map[string][]*sparkv1beta2.SparkApplication{}
 
 	for nodeName, jobsOnNode := range schedulingDecision {
+		logger.Info("Jobs for Node", "node", nodeName, "jobs", jobsOnNode)
 		for _, jobName := range jobsOnNode {
+			logger.Info("Remove Job from queue", "job", jobName)
 			var jobName = ws.JobQueue.removeFromQueue(jobName)
 			if jobName == nil {
 				http.Error(writer, "Could not find Job in Queue", http.StatusNotFound)
 				return
 			}
 
+			logger.Info("Fetching Job from kubernetes", "job", jobName)
 			var job = &batchjobv1alpha1.Simple{}
 			err := ws.Client.Get(request.Context(), *jobName, job)
 			if err != nil {
@@ -147,12 +145,10 @@ func (ws *WebServer) SubmitSchedule(writer http.ResponseWriter, request *http.Re
 			if err != nil {
 				http.Error(writer, "Could not create SparkApplication for Job", http.StatusInternalServerError)
 				logger.Error(err, "Failed create SparkApplication. Put BatchJob Back in the Queue", "BatchJob", jobName)
-				ws.JobQueue.addJobToQueue(*jobName)
-				return
-			}
-
-			if err := ws.UpdateJobStatus(request.Context(), job, batchjobv1alpha1.SubmittedState); err != nil {
-				http.Error(writer, "Could not update BatchJob status to submitted", http.StatusInternalServerError)
+				ws.JobQueue.addJobToQueue(types.NamespacedName{
+					Namespace: job.Namespace,
+					Name:      job.Name,
+				})
 				return
 			}
 
@@ -164,22 +160,19 @@ func (ws *WebServer) SubmitSchedule(writer http.ResponseWriter, request *http.Re
 
 }
 
-func (ws *WebServer) UpdateJobStatus(context context.Context, job *batchjobv1alpha1.Simple, state batchjobv1alpha1.ApplicationStateType) error {
-	job.Status.State = state
-
-	if err := ws.Client.Status().Update(context, job); err != nil {
-		ctrllog.FromContext(context).Error(err, "Failed to update BatchJob Status", err)
-		return err
-	}
-	return nil
-}
-
 func (ws *WebServer) ScheduleJobOnNode(ctx context.Context, job *batchjobv1alpha1.Simple, name string) (error, *sparkv1beta2.SparkApplication) {
+	ctrllog.FromContext(ctx).Info("Creating SparkApplication from Job", "job", job)
 	var spark = &sparkv1beta2.SparkApplication{}
 	spark.Name = job.Name
 	spark.Namespace = "default"
 	spark.Spec = job.Spec.Spec
 
+	err := ctrl.SetControllerReference(job, spark, ws.Client.Scheme)
+	if err != nil {
+		ctrllog.FromContext(ctx).Error(err, "Could not set ControllerReference")
+		return err, nil
+
+	}
 	annotationMap := make(map[string]string)
 	annotationMap["external-scheduling-desired-node"] = name
 
