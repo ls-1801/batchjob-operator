@@ -83,8 +83,10 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}
-	reconciler.SparkCtrl = controllers.NewSparkController(reconciler)
-	reconciler.BatchJobCtrl = controllers.NewBatchJobController(reconciler)
+
+	reconciler.JobQueue = controllers.NewJobQueue()
+	reconciler.SparkCtrl = controllers.NewSparkController(mgr.GetClient())
+	reconciler.BatchJobCtrl = controllers.NewBatchJobController(mgr.GetClient())
 
 	if err = (reconciler).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Simple")

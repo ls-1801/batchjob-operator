@@ -7,15 +7,16 @@ import (
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	. "k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type SparkController struct {
-	Client       *SimpleReconciler
+	client.Client
 	Applications map[NamespacedName]*v1beta2.SparkApplication
 }
 
-func NewSparkController(client *SimpleReconciler) *SparkController {
+func NewSparkController(client client.Client) *SparkController {
 	return &SparkController{Client: client, Applications: map[NamespacedName]*v1beta2.SparkApplication{}}
 }
 
@@ -67,12 +68,12 @@ func toTransitionEnumSpark(ctx Context, before v1beta2.ApplicationStateType, aft
 		ctrllog.FromContext(ctx).Info("Spark went to Submitted State")
 		return SparkSubmitted
 	}
-	if before == v1beta2.SubmittedState && after == v1beta2.RunningState {
+	if (before == v1beta2.NewState || before == v1beta2.SubmittedState) && after == v1beta2.RunningState {
 		ctrllog.FromContext(ctx).Info("Spark went to Running State")
 		return SparkRunning
 	}
 
-	ctrllog.FromContext(ctx).Info("Spark is in an unknown/unhandled state")
+	ctrllog.FromContext(ctx).Info("Spark is in an unknown/unhandled state", "before", before, "after", after)
 
 	return SparkProblem
 }
