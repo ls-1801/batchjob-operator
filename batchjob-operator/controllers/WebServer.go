@@ -32,7 +32,7 @@ func (ws *WebServer) Start(context context.Context) error {
 	return http.ListenAndServe(":9090", nil)
 }
 
-func (ws *WebServer) SubmitJobToQueue(context context.Context, newJob types.NamespacedName) error {
+func (ws *WebServer) SubmitJobToQueue(context context.Context, newJob types.NamespacedName) {
 	var logger = ctrllog.FromContext(context)
 
 	logger.Info(
@@ -40,7 +40,6 @@ func (ws *WebServer) SubmitJobToQueue(context context.Context, newJob types.Name
 	)
 
 	ws.JobQueue.addJobToQueue(newJob)
-	return nil
 }
 
 func (ws *WebServer) GetQueue(w http.ResponseWriter, req *http.Request) {
