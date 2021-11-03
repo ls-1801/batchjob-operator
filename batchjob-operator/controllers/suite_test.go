@@ -114,17 +114,18 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 
 	var reconciler = &SimpleReconciler{
-		Client:      k8sManager.GetClient(),
-		Scheme:      k8sManager.GetScheme(),
-		ManagedJobs: map[types.NamespacedName]*batchjobv1alpha1.Simple{},
-		SparkCtrl:   nil,
-		WebServer:   nil,
+		Client:       k8sManager.GetClient(),
+		Scheme:       k8sManager.GetScheme(),
+		BatchJobCtrl: nil,
+		SparkCtrl:    nil,
+		WebServer:    nil,
 	}
 
 	WS = NewWebServer(reconciler)
 	reconciler.WebServer = WS
 
 	reconciler.SparkCtrl = NewSparkController(reconciler)
+	reconciler.BatchJobCtrl = NewBatchJobController(reconciler)
 
 	err = reconciler.SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
