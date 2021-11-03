@@ -38,6 +38,7 @@ type SimpleReconciler struct {
 	WebServer    *WebServer
 	BatchJobCtrl *BatchJobController
 	SparkCtrl    *SparkController
+	JobQueue     *JobQueue
 }
 
 type JobDescription struct {
@@ -93,7 +94,11 @@ func (r *SimpleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			return ctrl.Result{}, nil
 		case SparkCreated:
 			logger.Info("SparkApplication Created")
+			r.JobQueue.removeFromQueue(req.NamespacedName)
 			return ctrl.Result{}, r.BatchJobCtrl.UpdateJobStatus(ctx, batchJob, batchjobv1alpha1.SubmittedState)
+		case SparkSubmitted:
+			logger.Info("SparkApp is now in Submitted State")
+			return ctrl.Result{}, nil
 		case SparkRunning:
 			logger.Info("SparkApplication is Now Running")
 			return ctrl.Result{}, r.BatchJobCtrl.UpdateJobStatus(ctx, batchJob, batchjobv1alpha1.RunningState)
@@ -104,7 +109,7 @@ func (r *SimpleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	case InQueue:
 		logger.Info("Job is now in Queue", "job", req.NamespacedName)
 	case Submitted:
-		logger.Info("Job is now in Submitted", "job", req.NamespacedName)
+		logger.Info("Job is now in Submitted, remove it from the Queue", "job", req.NamespacedName)
 	case Running:
 		logger.Info("Job is now in Running", "job", req.NamespacedName)
 	default:
@@ -145,7 +150,7 @@ func (r *SimpleReconciler) handleNewJob(ctx context.Context, job *batchjobv1alph
 	}
 
 	// Usual case: Spark does not exist. New Job is put into the Queue and its status is updated
-	r.WebServer.SubmitJobToQueue(ctx, types.NamespacedName{
+	r.JobQueue.addJobToQueue(types.NamespacedName{
 		Namespace: job.Namespace,
 		Name:      job.Name,
 	})

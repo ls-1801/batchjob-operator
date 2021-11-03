@@ -124,8 +124,9 @@ var _ = BeforeSuite(func() {
 	WS = NewWebServer(reconciler)
 	reconciler.WebServer = WS
 
-	reconciler.SparkCtrl = NewSparkController(reconciler)
-	reconciler.BatchJobCtrl = NewBatchJobController(reconciler)
+	reconciler.SparkCtrl = NewSparkController(k8sClient)
+	reconciler.BatchJobCtrl = NewBatchJobController(k8sClient)
+	reconciler.JobQueue = NewJobQueue()
 
 	err = reconciler.SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
@@ -403,7 +404,7 @@ var _ = Describe("CronJob controller", func() {
 			err = k8sClient.Status().Update(ctx, sparkApp)
 			Expect(err).ToNot(HaveOccurred())
 
-			time.Sleep(1000)
+			time.Sleep(5000)
 
 			sparkApp.Status.AppState.State = v1beta2.RunningState
 			err = k8sClient.Status().Update(ctx, sparkApp)

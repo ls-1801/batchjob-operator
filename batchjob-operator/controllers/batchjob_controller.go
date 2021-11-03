@@ -7,15 +7,16 @@ import (
 	. "github.com/ls-1801/batchjob-operator/api/v1alpha1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	. "k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type BatchJobController struct {
-	Client      *SimpleReconciler
+	client.Client
 	ManagedJobs map[NamespacedName]*Simple
 }
 
-func NewBatchJobController(client *SimpleReconciler) *BatchJobController {
+func NewBatchJobController(client client.Client) *BatchJobController {
 	return &BatchJobController{Client: client, ManagedJobs: map[NamespacedName]*Simple{}}
 }
 
