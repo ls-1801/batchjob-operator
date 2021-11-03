@@ -66,8 +66,8 @@ type PodDescription struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.9.2/pkg/reconcile
 func (r *SimpleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := ctrllog.FromContext(ctx)
-	logger.Info("================ LOOP TRIGGERED =============")
+	trigger := ctrllog.FromContext(ctx).WithName("TRIGGER")
+	trigger.Info("================ LOOP TRIGGERED =============")
 
 	var err, batchJob = r.BatchJobCtrl.getBatchJob(ctx, req.NamespacedName)
 	if err != nil {
@@ -77,43 +77,46 @@ func (r *SimpleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// Figure out what happened and why the loop was triggered
 	switch r.BatchJobCtrl.hasChanged(ctx, req.NamespacedName, batchJob) {
 	case Removed:
-		logger.Info("BatchJob was removed. Missing Implementation!")
-		//TODO: Delete associated SparkApplication
-		return ctrl.Result{}, nil
+		trigger.Info("BatchJob was removed")
+		return ctrl.Result{}, r.SparkCtrl.DeleteLinkedSpark(ctx, req.NamespacedName)
 	case NewJob:
+		trigger.Info("New BatchJob")
 		return r.handleNewJob(ctx, batchJob)
 	case NoChange:
 		// No change means that, the associated SparkApplication has changed
-		err, spark := r.SparkCtrl.getLinkedSpark(ctx, req.NamespacedName)
+		err, spark := r.SparkCtrl.LinkedSparkApplication(ctx, req.NamespacedName)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
 		switch r.SparkCtrl.hasSparkChanged(ctx, req.NamespacedName, spark) {
 		case SparkNoChange:
-			logger.Error(errors.New("unexpected loop trigger"), "Loop triggered without change")
+			trigger.Error(errors.New("unexpected loop trigger"), "Loop triggered without change")
 			return ctrl.Result{}, nil
 		case SparkCreated:
-			logger.Info("SparkApplication Created")
+			trigger.Info("SparkApplication Created")
 			r.JobQueue.removeFromQueue(req.NamespacedName)
 			return ctrl.Result{}, r.BatchJobCtrl.UpdateJobStatus(ctx, batchJob, batchjobv1alpha1.SubmittedState)
 		case SparkSubmitted:
-			logger.Info("SparkApp is now in Submitted State")
+			trigger.Info("SparkApp is now in Submitted State")
 			return ctrl.Result{}, nil
 		case SparkRunning:
-			logger.Info("SparkApplication is Now Running")
+			trigger.Info("SparkApplication is Now Running")
 			return ctrl.Result{}, r.BatchJobCtrl.UpdateJobStatus(ctx, batchJob, batchjobv1alpha1.RunningState)
+		case SparkRemoved:
+			trigger.Info("SparkApplication was removed")
+			return ctrl.Result{}, nil
 		default:
-			logger.Info("Spark did something")
+			trigger.Info("Spark did something")
 			return ctrl.Result{}, errors.New("unexpected spark change")
 		}
 	case InQueue:
-		logger.Info("Job is now in Queue", "job", req.NamespacedName)
+		trigger.Info("Job is now in Queue", "job", req.NamespacedName)
 	case Submitted:
-		logger.Info("Job is now in Submitted, remove it from the Queue", "job", req.NamespacedName)
+		trigger.Info("Job is now in Submitted, remove it from the Queue", "job", req.NamespacedName)
 	case Running:
-		logger.Info("Job is now in Running", "job", req.NamespacedName)
+		trigger.Info("Job is now in Running", "job", req.NamespacedName)
 	default:
-		logger.Error(errors.New("illegal state transition"), "Job Made in illegal State Transition")
+		trigger.Error(errors.New("illegal state transition"), "Job Made in illegal State Transition")
 		return ctrl.Result{}, nil
 	}
 
@@ -137,7 +140,7 @@ func (r *SimpleReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *SimpleReconciler) handleNewJob(ctx context.Context, job *batchjobv1alpha1.Simple) (ctrl.Result, error) {
 
 	sparkApplicationName := types.NamespacedName{Name: job.Name, Namespace: job.Namespace}
-	err, spark := r.SparkCtrl.getLinkedSpark(ctx, sparkApplicationName)
+	err, spark := r.SparkCtrl.LinkedSparkApplication(ctx, sparkApplicationName)
 
 	if err != nil {
 		ctrllog.FromContext(ctx).Error(err, "Failed to get SparkApplications")

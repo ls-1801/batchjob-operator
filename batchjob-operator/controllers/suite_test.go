@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"github.com/GoogleCloudPlatform/spark-on-k8s-operator/pkg/apis/sparkoperator.k8s.io/v1beta2"
 	v1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"net/http"
@@ -426,5 +427,31 @@ var _ = Describe("CronJob controller", func() {
 			)
 
 		})
+		It("Should delete SparkApplication if BatchJob is deleted", func() {
+			By("Deleting the BatchJob")
+			batchjobLookupKey := types.NamespacedName{Name: BatchJob, Namespace: BatchJobNamespace}
+			batchJob := batchjobv1alpha1.Simple{}
+			err := k8sClient.Get(ctx, batchjobLookupKey, &batchJob)
+			Expect(err).ToNot(HaveOccurred())
+			err = k8sClient.Delete(ctx, &batchJob)
+			Expect(err).ToNot(HaveOccurred())
+
+			By("Validating that the BatchJob was deleted")
+			Eventually(func() bool {
+				batchjobLookupKey := types.NamespacedName{Name: BatchJob, Namespace: BatchJobNamespace}
+				batchJob := &batchjobv1alpha1.Simple{}
+				err := k8sClient.Get(ctx, batchjobLookupKey, batchJob)
+				return k8serrors.IsNotFound(err)
+			}, timeout, interval).Should(BeTrue())
+
+			By("Validating that the SparkApplication was Deleted")
+			Eventually(func() bool {
+				var sparkApp = &v1beta2.SparkApplication{}
+				err := k8sClient.Get(ctx, types.NamespacedName{Name: BatchJob, Namespace: BatchJobNamespace}, sparkApp)
+				return k8serrors.IsNotFound(err)
+			}, timeout, interval).Should(BeTrue())
+
+		})
+
 	})
 })

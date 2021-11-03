@@ -78,7 +78,7 @@ func toTransitionEnumSpark(ctx Context, before v1beta2.ApplicationStateType, aft
 	return SparkProblem
 }
 
-func (sc SparkController) getLinkedSpark(context Context, name NamespacedName) (error, *v1beta2.SparkApplication) {
+func (sc SparkController) LinkedSparkApplication(context Context, name NamespacedName) (error, *v1beta2.SparkApplication) {
 	var spark = &v1beta2.SparkApplication{}
 	ctrllog.FromContext(context).V(TRACE).Info("Get SparkApplication")
 	var err = sc.Client.Get(context, name, spark)
@@ -91,11 +91,25 @@ func (sc SparkController) getLinkedSpark(context Context, name NamespacedName) (
 	return err, spark
 }
 
+func (sc SparkController) DeleteLinkedSpark(context Context, name NamespacedName) error {
+	err, spark := sc.LinkedSparkApplication(context, name)
+	if err != nil {
+		return err
+	}
+
+	ctrllog.FromContext(context).Info("Delete SparkApplication")
+	if spark == nil {
+		ctrllog.FromContext(context).Info("Spark Application does not exist")
+	}
+
+	return sc.Client.Delete(context, spark)
+}
+
 func (sc *SparkController) manageSpark(ctx Context, nn NamespacedName, spark *v1beta2.SparkApplication) {
 
 	if old, ok := sc.Applications[nn]; ok {
 		if spark == nil {
-			ctrllog.FromContext(ctx).Info("SparkApplication was removed", "old", "old")
+			ctrllog.FromContext(ctx).Info("No longer keeping track of Spark", "old", old)
 			delete(sc.Applications, nn)
 			return
 		}

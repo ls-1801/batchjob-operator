@@ -31,7 +31,13 @@ const (
 )
 
 func (c *BatchJobController) manageJob(ctx Context, batchJob *Simple, name NamespacedName) {
-	if old, ok := c.ManagedJobs[name]; ok {
+	if old, ok := c.ManagedJobs[name]; !ok {
+		if batchJob == nil {
+			return
+		}
+
+		ctrllog.FromContext(ctx).Info("Manage new Job")
+	} else {
 		if batchJob == nil {
 			ctrllog.FromContext(ctx).Info("Managed Job was removed", "old", old)
 			delete(c.ManagedJobs, name)
@@ -44,13 +50,6 @@ func (c *BatchJobController) manageJob(ctx Context, batchJob *Simple, name Names
 		} else {
 			ctrllog.FromContext(ctx).Info("Managed Job versions did not change from: " + old.ResourceVersion)
 		}
-	} else {
-		if batchJob == nil {
-			ctrllog.FromContext(ctx).Info("Job was never managed")
-			return
-		}
-
-		ctrllog.FromContext(ctx).Info("Manage new Job")
 	}
 
 	c.ManagedJobs[name] = batchJob
@@ -80,12 +79,9 @@ func (c *BatchJobController) hasChanged(ctx Context, name NamespacedName, job *S
 
 	}
 
-	//Unexpected Case where an unmanaged Job gets removed
-	//This Could happen if the Loop was triggered by an SparkApplication that was controlled by a deleted Job.
-	//In any case we should remove the SparkApplication
+	//This is the case if a BatchJob was deleted and the linked SparkApplication was also deleted
 	if job == nil {
-		ctrllog.FromContext(ctx).Info("Job was removed, even though it was never managed")
-		return Removed
+		return NoChange
 	}
 
 	ctrllog.FromContext(ctx).Info("Job is new", "new", NamespacedName{
@@ -119,7 +115,6 @@ func (c *BatchJobController) getBatchJob(context Context, name NamespacedName) (
 
 	if err != nil && k8serrors.IsNotFound(err) {
 		ctrllog.FromContext(context).Info("BatchJob resource not found. Ignoring since object must be deleted")
-		delete(c.ManagedJobs, name)
 		return nil, nil
 	}
 
