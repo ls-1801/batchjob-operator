@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/julienschmidt/httprouter"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -13,27 +14,32 @@ import (
 
 type WebServer struct {
 	Client *SimpleReconciler
+	Router *httprouter.Router
 }
 
 func NewWebServer(client *SimpleReconciler) *WebServer {
-	return &WebServer{Client: client}
+	ws := &WebServer{Client: client}
+	ws.setupRouter()
+	return ws
+}
+
+func (ws *WebServer) setupRouter() {
+	ws.Router = httprouter.New()
+	ws.Router.GET("/queue", ws.GetQueue)
+	ws.Router.GET("/nodes", ws.GetNodes)
+	ws.Router.POST("/schedule", ws.SubmitSchedule)
+
+	ws.Router.POST("/extender/filter", ws.Filter)
+	ws.Router.POST("/extender/prioritize", ws.Prioritize)
 }
 
 func (ws *WebServer) Start(context context.Context) error {
 	var logger = ctrllog.FromContext(context)
-	logger.Info("Init WebServer on port 9090")
-	http.HandleFunc("/queue", ws.GetQueue)
-	http.HandleFunc("/nodes", ws.GetNodes)
 	logger.Info("Listening on port 9090")
-	return http.ListenAndServe(":9090", nil)
+	return http.ListenAndServe(":9090", ws.Router)
 }
 
-func (ws *WebServer) GetQueue(w http.ResponseWriter, req *http.Request) {
-	if req.Method != http.MethodGet {
-		http.NotFound(w, req)
-		return
-	}
-
+func (ws *WebServer) GetQueue(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	var logger = ctrllog.FromContext(req.Context())
 	defer logger.Info("Queue Request Done")
 	logger.Info("Queue Request Started")
@@ -46,12 +52,7 @@ func (ws *WebServer) GetQueue(w http.ResponseWriter, req *http.Request) {
 	HandleError(json.NewEncoder(w).Encode(jobDescriptions))
 }
 
-func (ws *WebServer) GetNodes(w http.ResponseWriter, req *http.Request) {
-	if req.Method != http.MethodGet {
-		http.NotFound(w, req)
-		return
-	}
-
+func (ws *WebServer) GetNodes(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	var logger = ctrllog.FromContext(req.Context())
 	defer logger.Info("Node Request Done")
 	logger.Info("Node Request Started")
@@ -88,14 +89,8 @@ func (ws *WebServer) GetNodes(w http.ResponseWriter, req *http.Request) {
 	HandleError(json.NewEncoder(w).Encode(nodeMap))
 }
 
-func (ws *WebServer) SubmitSchedule(writer http.ResponseWriter, request *http.Request) {
+func (ws *WebServer) SubmitSchedule(writer http.ResponseWriter, request *http.Request, _ httprouter.Params) {
 	logger := ctrllog.FromContext(request.Context())
-
-	if request.Method != http.MethodPost {
-		http.NotFound(writer, request)
-		return
-	}
-
 	var schedulingDecision = map[string][]types.NamespacedName{}
 	err := json.NewDecoder(request.Body).Decode(&schedulingDecision)
 	if err != nil {
@@ -120,4 +115,14 @@ func (ws *WebServer) SubmitSchedule(writer http.ResponseWriter, request *http.Re
 
 	HandleError(json.NewEncoder(writer).Encode(responseMap))
 
+}
+
+func (ws *WebServer) Filter(writer http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
+	writer.Write([]byte("OK"))
+	writer.WriteHeader(http.StatusOK)
+}
+
+func (ws *WebServer) Prioritize(writer http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
+	writer.Write([]byte("OK"))
+	writer.WriteHeader(http.StatusOK)
 }
