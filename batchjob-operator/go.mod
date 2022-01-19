@@ -12,6 +12,7 @@ require (
 	k8s.io/api v0.21.2
 	k8s.io/apimachinery v0.21.2
 	k8s.io/client-go v0.21.2
+	k8s.io/kube-scheduler v0.0.0
 	sigs.k8s.io/controller-runtime v0.9.2
 )
 

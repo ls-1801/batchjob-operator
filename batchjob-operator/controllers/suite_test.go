@@ -26,6 +26,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	extenderv1 "k8s.io/kube-scheduler/extender/v1"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -436,7 +437,25 @@ var _ = Describe("CronJob controller", func() {
 
 			By("sending a request to the filter endpoint")
 			Eventually(func() (bool, error) {
-				rr, err := POST("/extender/filter", nil)
+				var nodeNames = &[]string{}
+				payloadBuf := new(bytes.Buffer)
+				err := json.NewEncoder(payloadBuf).Encode(extenderv1.ExtenderArgs{
+					Pod: &v1.Pod{},
+					Nodes: &v1.NodeList{
+						TypeMeta: metav1.TypeMeta{
+							Kind:       "nodelist",
+							APIVersion: "v1",
+						},
+						ListMeta: metav1.ListMeta{
+							ResourceVersion: "3",
+							Continue:        "3",
+						},
+						Items: []v1.Node{},
+					},
+					NodeNames: nodeNames,
+				})
+
+				rr, err := POST("/extender/filter", payloadBuf)
 
 				// Check the status code is what we expect.
 				Expect(rr.Code).Should(BeEquivalentTo(http.StatusOK))

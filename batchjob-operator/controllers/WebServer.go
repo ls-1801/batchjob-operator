@@ -1,13 +1,17 @@
 package controllers
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/julienschmidt/httprouter"
 	"github.com/pkg/errors"
+	"io"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	extenderv1 "k8s.io/kube-scheduler/extender/v1"
+	"log"
 	"net/http"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -117,12 +121,76 @@ func (ws *WebServer) SubmitSchedule(writer http.ResponseWriter, request *http.Re
 
 }
 
-func (ws *WebServer) Filter(writer http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
-	writer.Write([]byte("OK"))
-	writer.WriteHeader(http.StatusOK)
+func (ws *WebServer) Filter(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+
+	requiresBody(w, r)
+
+	var buf bytes.Buffer
+	body := io.TeeReader(r.Body, &buf)
+
+	var filterArgs *extenderv1.ExtenderArgs
+	var filterResult *extenderv1.ExtenderFilterResult
+
+	if err := json.NewDecoder(body).Decode(&filterArgs); err != nil {
+		filterResult = &extenderv1.ExtenderFilterResult{
+			Nodes:       nil,
+			FailedNodes: nil,
+			Error:       err.Error(),
+		}
+	} else {
+		filterResult = ws.filterInternal(filterArgs)
+	}
+
+	if resultBody, err := json.Marshal(filterResult); err != nil {
+		panic(err)
+	} else {
+		log.Print(" extenderFilterResult = ", string(resultBody))
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(resultBody)
+	}
 }
 
 func (ws *WebServer) Prioritize(writer http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
 	writer.Write([]byte("OK"))
 	writer.WriteHeader(http.StatusOK)
+}
+
+func (ws *WebServer) filterInternal(args *extenderv1.ExtenderArgs) *extenderv1.ExtenderFilterResult {
+	pod := args.Pod
+	canSchedule := make([]corev1.Node, 0, len(args.Nodes.Items))
+	canNotSchedule := make(map[string]string)
+
+	for _, node := range args.Nodes.Items {
+		result, err := filterFunc(*pod, node)
+		if err != nil {
+			canNotSchedule[node.Name] = err.Error()
+		} else {
+			if result {
+				canSchedule = append(canSchedule, node)
+			}
+		}
+	}
+
+	result := extenderv1.ExtenderFilterResult{
+		Nodes: &corev1.NodeList{
+			Items: canSchedule,
+		},
+		FailedNodes: canNotSchedule,
+		Error:       "",
+	}
+
+	return &result
+}
+
+func filterFunc(pod corev1.Pod, node corev1.Node) (bool, error) {
+	ctrllog.Log.Info("Filter Func", "Pod", pod, "Node", node)
+	return true, nil
+}
+
+func requiresBody(w http.ResponseWriter, r *http.Request) {
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
 }
