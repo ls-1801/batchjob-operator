@@ -11,6 +11,8 @@ import (
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+var SchedulerName = "my-scheduler"
+
 type ScheduleExecutor struct {
 	SchedulingDecision map[*v1.Node][]*v1alpha1.Simple
 }
@@ -58,7 +60,7 @@ func NewScheduleExecutor(
 			return errors.New("node does not exist: " + nodeName), nil
 		}
 
-		var concreteJobs = []*v1alpha1.Simple{}
+		var concreteJobs []*v1alpha1.Simple
 		for _, jobName := range jobNames {
 			var cJob = findJob(jobName, jobList)
 			if cJob == nil {
@@ -82,7 +84,7 @@ func (se *ScheduleExecutor) Execute(ctx context.Context, client *SimpleReconcile
 
 	for node, jobs := range se.SchedulingDecision {
 		for _, job := range jobs {
-			err, sparkApp := se.scheduleJobOnNode(ctx, client, job, node)
+			err, sparkApp := se.createJobForNode(ctx, client, job, node)
 			if err != nil {
 				return err, nil
 			}
@@ -95,7 +97,7 @@ func (se *ScheduleExecutor) Execute(ctx context.Context, client *SimpleReconcile
 
 }
 
-func (se *ScheduleExecutor) scheduleJobOnNode(ctx context.Context, client *SimpleReconciler, job *v1alpha1.Simple,
+func (se *ScheduleExecutor) createJobForNode(ctx context.Context, client *SimpleReconciler, job *v1alpha1.Simple,
 	node *v1.Node) (error,
 	*sparkv1beta2.SparkApplication) {
 	ctrllog.FromContext(ctx).Info("Creating SparkApplication from Job", "job", job)
@@ -115,13 +117,15 @@ func (se *ScheduleExecutor) scheduleJobOnNode(ctx context.Context, client *Simpl
 
 	spark.Spec.Driver = sparkv1beta2.DriverSpec{
 		SparkPodSpec: sparkv1beta2.SparkPodSpec{
-			Annotations: annotationMap,
+			SchedulerName: &SchedulerName,
+			Annotations:   annotationMap,
 		},
 	}
 
 	spark.Spec.Executor = sparkv1beta2.ExecutorSpec{
 		SparkPodSpec: sparkv1beta2.SparkPodSpec{
-			Annotations: annotationMap,
+			SchedulerName: &SchedulerName,
+			Annotations:   annotationMap,
 		},
 	}
 

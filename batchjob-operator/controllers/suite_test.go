@@ -346,6 +346,12 @@ var _ = Describe("CronJob controller", func() {
 				WithTransform(func(sparkApp *v1beta2.SparkApplication) map[string]string {
 					return sparkApp.Spec.Executor.SparkPodSpec.Annotations
 				}, HaveKeyWithValue("external-scheduling-desired-node", TestNode)),
+				WithTransform(func(sparkApp *v1beta2.SparkApplication) string {
+					return *sparkApp.Spec.Driver.SparkPodSpec.SchedulerName
+				}, BeEquivalentTo(SchedulerName)),
+				WithTransform(func(sparkApp *v1beta2.SparkApplication) string {
+					return *sparkApp.Spec.Executor.SparkPodSpec.SchedulerName
+				}, BeEquivalentTo(SchedulerName)),
 			))
 
 			By("Checking that the Queue is now Empty")
