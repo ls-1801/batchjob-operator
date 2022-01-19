@@ -112,22 +112,18 @@ func (se *ScheduleExecutor) createJobForNode(ctx context.Context, client *Simple
 		return err, nil
 
 	}
-	annotationMap := make(map[string]string)
-	annotationMap["external-scheduling-desired-node"] = node.Name
-
-	spark.Spec.Driver = sparkv1beta2.DriverSpec{
-		SparkPodSpec: sparkv1beta2.SparkPodSpec{
-			SchedulerName: &SchedulerName,
-			Annotations:   annotationMap,
-		},
+	if spark.Spec.Driver.SparkPodSpec.Annotations == nil {
+		spark.Spec.Driver.SparkPodSpec.Annotations = make(map[string]string)
+	}
+	if spark.Spec.Executor.SparkPodSpec.Annotations == nil {
+		spark.Spec.Executor.SparkPodSpec.Annotations = make(map[string]string)
 	}
 
-	spark.Spec.Executor = sparkv1beta2.ExecutorSpec{
-		SparkPodSpec: sparkv1beta2.SparkPodSpec{
-			SchedulerName: &SchedulerName,
-			Annotations:   annotationMap,
-		},
-	}
+	spark.Spec.Driver.SparkPodSpec.SchedulerName = &SchedulerName
+	spark.Spec.Executor.SparkPodSpec.SchedulerName = &SchedulerName
+
+	spark.Spec.Driver.SparkPodSpec.Annotations["external-scheduling-desired-node"] = node.Name
+	spark.Spec.Executor.SparkPodSpec.Annotations["external-scheduling-desired-node"] = node.Name
 
 	if err := client.Create(ctx, spark); err != nil {
 		ctrllog.FromContext(ctx).Error(err, "Could Not Create SparkApplication")

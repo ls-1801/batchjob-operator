@@ -34,15 +34,15 @@ import (
 	"testing"
 	"time"
 
+	batchjobv1alpha1 "github.com/ls-1801/batchjob-operator/api/v1alpha1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/openlyinc/pointy"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
-	batchjobv1alpha1 "github.com/ls-1801/batchjob-operator/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -230,11 +230,28 @@ var _ = Describe("CronJob controller", func() {
 				Spec: batchjobv1alpha1.SimpleSpec{
 					Foo: "SomeThing",
 					Spec: v1beta2.SparkApplicationSpec{
-						Type:                "Scala",
-						SparkVersion:        "3.1.1",
-						Mode:                "cluster",
-						Image:               &ImageName,
-						ImagePullPolicy:     &ImagePullPolicy,
+						Type:            "Scala",
+						SparkVersion:    "3.1.1",
+						Mode:            "cluster",
+						Image:           &ImageName,
+						ImagePullPolicy: &ImagePullPolicy,
+						//    driver:
+						//      cores: 1
+						//      coreLimit: "500m"
+						//      memory: "512m"
+						//      labels:
+						//        version: 3.1.1
+						//      serviceAccount: spark-operator-spark
+						//      volumeMounts:
+						//        - name: "test-volume"
+						//          mountPath: "/tmp"
+						Driver: v1beta2.DriverSpec{
+							SparkPodSpec: v1beta2.SparkPodSpec{
+								Cores:     pointy.Int32(1),
+								CoreLimit: pointy.String("500m"),
+								Memory:    pointy.String("500Mi"),
+							},
+						},
 						MainClass:           &MainClass,
 						MainApplicationFile: &MainClassApplicationFile,
 					},
@@ -352,6 +369,15 @@ var _ = Describe("CronJob controller", func() {
 				WithTransform(func(sparkApp *v1beta2.SparkApplication) string {
 					return *sparkApp.Spec.Executor.SparkPodSpec.SchedulerName
 				}, BeEquivalentTo(SchedulerName)),
+				WithTransform(func(sparkApp *v1beta2.SparkApplication) *string {
+					return sparkApp.Spec.Driver.CoreLimit
+				}, BeEquivalentTo(pointy.String("500m"))),
+				WithTransform(func(sparkApp *v1beta2.SparkApplication) *int32 {
+					return sparkApp.Spec.Driver.Cores
+				}, BeEquivalentTo(pointy.Int32(1))),
+				WithTransform(func(sparkApp *v1beta2.SparkApplication) *string {
+					return sparkApp.Spec.Driver.Memory
+				}, BeEquivalentTo(pointy.String("500Mi"))),
 			))
 
 			By("Checking that the Queue is now Empty")
