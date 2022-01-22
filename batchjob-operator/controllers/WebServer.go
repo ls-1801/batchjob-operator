@@ -13,6 +13,7 @@ import (
 	extenderv1 "k8s.io/kube-scheduler/extender/v1"
 	"log"
 	"net/http"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -68,7 +69,7 @@ func (ws *WebServer) GetNodes(w http.ResponseWriter, req *http.Request, _ httpro
 	}
 
 	var podList = &corev1.PodList{}
-	if err := ws.Client.Client.List(req.Context(), podList); err != nil {
+	if err := ws.Client.Client.List(req.Context(), podList, client.HasLabels{JobNameLabel}); err != nil {
 		logger.Error(err, "Error getting Pods")
 		HandleError1(fmt.Fprintln(w, "Error getting the Pod list"))
 	}
@@ -83,7 +84,7 @@ func (ws *WebServer) GetNodes(w http.ResponseWriter, req *http.Request, _ httpro
 
 	for _, pod := range podList.Items {
 		if val, ok := nodeMap[pod.Spec.NodeName]; ok {
-			nodeMap[pod.Spec.NodeName] = append(val, pod.Name)
+			nodeMap[pod.Spec.NodeName] = append(val, pod.Labels[JobNameLabel])
 		} else {
 			logger.Error(errors.New("Node not found: "+pod.Spec.NodeName), "Pod is Scheduled on an unknown Node")
 		}
@@ -147,12 +148,12 @@ func (ws *WebServer) Filter(w http.ResponseWriter, r *http.Request, _ httprouter
 		log.Print(" extenderFilterResult = ", string(resultBody))
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write(resultBody)
+		_, _ = w.Write(resultBody)
 	}
 }
 
 func (ws *WebServer) Prioritize(writer http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
-	writer.Write([]byte("OK"))
+	_, _ = writer.Write([]byte("OK"))
 	writer.WriteHeader(http.StatusOK)
 }
 
