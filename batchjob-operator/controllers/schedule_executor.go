@@ -11,6 +11,9 @@ import (
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+const DesiredNodeAnnotation = "external-scheduling-desired-node"
+const JobNameLabel = "external-scheduling-job-name"
+
 var SchedulerName = "my-scheduler"
 
 type ScheduleExecutor struct {
@@ -112,6 +115,19 @@ func (se *ScheduleExecutor) createJobForNode(ctx context.Context, client *Simple
 		return err, nil
 
 	}
+
+	setLabels(spark, job)
+	setAnnotations(spark, node)
+
+	if err := client.Create(ctx, spark); err != nil {
+		ctrllog.FromContext(ctx).Error(err, "Could Not Create SparkApplication")
+		return err, nil
+	}
+
+	return nil, spark
+}
+
+func setAnnotations(spark *sparkv1beta2.SparkApplication, node *v1.Node) {
 	if spark.Spec.Driver.SparkPodSpec.Annotations == nil {
 		spark.Spec.Driver.SparkPodSpec.Annotations = make(map[string]string)
 	}
@@ -122,13 +138,18 @@ func (se *ScheduleExecutor) createJobForNode(ctx context.Context, client *Simple
 	spark.Spec.Driver.SparkPodSpec.SchedulerName = &SchedulerName
 	spark.Spec.Executor.SparkPodSpec.SchedulerName = &SchedulerName
 
-	spark.Spec.Driver.SparkPodSpec.Annotations["external-scheduling-desired-node"] = node.Name
-	spark.Spec.Executor.SparkPodSpec.Annotations["external-scheduling-desired-node"] = node.Name
+	spark.Spec.Driver.SparkPodSpec.Annotations[DesiredNodeAnnotation] = node.Name
+	spark.Spec.Executor.SparkPodSpec.Annotations[DesiredNodeAnnotation] = node.Name
+}
 
-	if err := client.Create(ctx, spark); err != nil {
-		ctrllog.FromContext(ctx).Error(err, "Could Not Create SparkApplication")
-		return err, nil
+func setLabels(spark *sparkv1beta2.SparkApplication, job *v1alpha1.Simple) {
+	if spark.Spec.Driver.SparkPodSpec.Labels == nil {
+		spark.Spec.Driver.SparkPodSpec.Labels = make(map[string]string)
+	}
+	if spark.Spec.Executor.SparkPodSpec.Labels == nil {
+		spark.Spec.Executor.SparkPodSpec.Labels = make(map[string]string)
 	}
 
-	return nil, spark
+	spark.Spec.Driver.SparkPodSpec.Labels[JobNameLabel] = job.Name
+	spark.Spec.Executor.SparkPodSpec.Labels[JobNameLabel] = job.Name
 }
