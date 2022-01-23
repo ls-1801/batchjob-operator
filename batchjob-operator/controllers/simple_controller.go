@@ -76,7 +76,7 @@ func (r *SimpleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	// Figure out what happened and why the loop was triggered
-	switch r.BatchJobCtrl.hasChanged(ctx, req.NamespacedName, batchJob) {
+	switch r.BatchJobCtrl.GetBatchJobChange(ctx, req.NamespacedName, batchJob) {
 	case Removed:
 		trigger.Info("BatchJob was removed")
 		return ctrl.Result{}, r.SparkCtrl.DeleteLinkedSpark(ctx, req.NamespacedName)
@@ -89,9 +89,14 @@ func (r *SimpleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		if err != nil {
 			return ctrl.Result{}, err
 		}
-		switch r.SparkCtrl.hasSparkChanged(ctx, req.NamespacedName, spark) {
+		switch r.SparkCtrl.GetSparkChange(ctx, req.NamespacedName, spark) {
 		case SparkNoChange:
-			trigger.Info("Could not identify Event!")
+			trigger.Info("Could not detect Change!")
+			return ctrl.Result{}, nil
+		case SparkDriverChanges:
+		case SparkExecutorChanges:
+		case SparkLinkedPodChanged:
+			trigger.Info("SparkApplications Pods have changed")
 			return ctrl.Result{}, nil
 		case SparkCreated:
 			trigger.Info("SparkApplication Created")
@@ -103,11 +108,17 @@ func (r *SimpleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		case SparkRunning:
 			trigger.Info("SparkApplication is Now Running")
 			return ctrl.Result{}, r.BatchJobCtrl.UpdateJobStatus(ctx, batchJob, batchjobv1alpha1.RunningState)
+		case SparkSucceeding:
+			trigger.Info("SparkApplication is Succeeding")
+			return ctrl.Result{}, r.BatchJobCtrl.UpdateJobStatus(ctx, batchJob, batchjobv1alpha1.CompletedState)
 		case SparkCompleted:
 			trigger.Info("SparkApplication has Completed")
 			return ctrl.Result{}, r.BatchJobCtrl.UpdateJobStatus(ctx, batchJob, batchjobv1alpha1.CompletedState)
 		case SparkRemoved:
 			trigger.Info("SparkApplication was removed")
+			return ctrl.Result{}, nil
+		case UnhandledChange:
+			trigger.Info("Unhandled Change")
 			return ctrl.Result{}, nil
 		default:
 			trigger.Info("Spark did something")
@@ -119,6 +130,9 @@ func (r *SimpleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		trigger.Info("Job is now in Submitted, remove it from the Queue", "job", req.NamespacedName)
 	case Running:
 		trigger.Info("Job is now in Running", "job", req.NamespacedName)
+	case Completed:
+		trigger.Info("Job is now completed", "job", req.NamespacedName)
+		return ctrl.Result{}, nil
 	default:
 		trigger.Error(errors.New("illegal state transition"), "Job Made in illegal State Transition")
 		return ctrl.Result{}, nil
