@@ -183,8 +183,12 @@ func (ws *WebServer) filterInternal(args *extenderv1.ExtenderArgs) *extenderv1.E
 }
 
 func filterFunc(pod corev1.Pod, node corev1.Node) (bool, error) {
-	ctrllog.Log.Info("Filter Func", "Pod", pod, "Node", node)
-	return true, nil
+
+	if desiredNodeName, ok := pod.Annotations[DesiredNodeAnnotation]; ok {
+		return node.Name == desiredNodeName, nil
+	}
+
+	return true, errors.New("Pod is not annotated with DesiredNodeAnnotation")
 }
 
 func requiresBody(w http.ResponseWriter, r *http.Request) {
