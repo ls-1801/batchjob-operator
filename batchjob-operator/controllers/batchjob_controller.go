@@ -25,6 +25,7 @@ const (
 	Removed
 	Submitted
 	Running
+	Completed
 	InQueue
 	NoChange
 	UnknownChange
@@ -55,7 +56,7 @@ func (c *BatchJobController) manageJob(ctx Context, batchJob *Simple, name Names
 	c.ManagedJobs[name] = batchJob
 }
 
-func (c *BatchJobController) hasChanged(ctx Context, name NamespacedName, job *Simple) int {
+func (c *BatchJobController) GetBatchJobChange(ctx Context, name NamespacedName, job *Simple) int {
 	defer func() { c.manageJob(ctx, job, name) }()
 
 	if old, ok := c.ManagedJobs[name]; ok {
@@ -66,7 +67,7 @@ func (c *BatchJobController) hasChanged(ctx Context, name NamespacedName, job *S
 			return Removed
 		}
 
-		ctrllog.FromContext(ctx).Info("Check for differences", "old", *old, "new", *job)
+		ctrllog.FromContext(ctx).Info("Check for differences", "diff", cmp.Diff(old, job))
 		if DidResourceVersionChange(ctx, old.ResourceVersion, job.ResourceVersion) {
 			if !cmp.Equal(old.Status, job.Status) {
 				return toTransitionEnum(ctx, old.Status.State, job.Status.State)
@@ -104,6 +105,10 @@ func toTransitionEnum(ctx Context, before ApplicationStateType, after Applicatio
 		return Running
 	}
 
+	if before == RunningState && after == CompletedState {
+		return Completed
+	}
+
 	ctrllog.FromContext(ctx).Info("Can't figure out transition!", "before", before, "after", after)
 	return UnknownChange
 }
@@ -122,6 +127,11 @@ func (c *BatchJobController) getBatchJob(context Context, name NamespacedName) (
 }
 
 func (c *BatchJobController) UpdateJobStatus(context Context, job *Simple, state ApplicationStateType) error {
+	if job.Status.State == state {
+		ctrllog.FromContext(context).Info("Job already in desired state", "New-State", state)
+		return nil
+	}
+
 	var copiedJob = job.DeepCopy()
 	copiedJob.Status.State = state
 	ctrllog.FromContext(context).Info("Updating Status of Job", "job", copiedJob, "New-State", state)
