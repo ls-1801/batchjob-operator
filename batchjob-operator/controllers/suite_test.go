@@ -448,6 +448,8 @@ var _ = Describe("CronJob controller", func() {
 			time.Sleep(1000)
 			testStateTransition(v1beta2.RunningState, batchjobv1alpha1.RunningState)
 			time.Sleep(1000)
+			testStateTransition(v1beta2.SucceedingState, batchjobv1alpha1.CompletedState)
+			time.Sleep(1000)
 			testStateTransition(v1beta2.CompletedState, batchjobv1alpha1.CompletedState)
 
 		})
