@@ -13,6 +13,7 @@ import (
 
 const DesiredNodeAnnotation = "external-scheduling-desired-node"
 const JobNameLabel = "external-scheduling-job-name"
+const ExecutorPodLabel = "external-scheduling-executor-pod"
 
 var SchedulerName = "my-scheduler"
 
@@ -151,5 +152,7 @@ func setLabels(spark *sparkv1beta2.SparkApplication, job *v1alpha1.Simple) {
 	}
 
 	spark.Spec.Driver.SparkPodSpec.Labels[JobNameLabel] = job.Name
+
 	spark.Spec.Executor.SparkPodSpec.Labels[JobNameLabel] = job.Name
+	spark.Spec.Executor.SparkPodSpec.Labels[ExecutorPodLabel] = job.Name
 }

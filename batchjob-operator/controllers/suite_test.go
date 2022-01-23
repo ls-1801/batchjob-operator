@@ -369,6 +369,12 @@ var _ = Describe("CronJob controller", func() {
 				WithTransform(func(sparkApp *v1beta2.SparkApplication) map[string]string {
 					return sparkApp.Spec.Executor.SparkPodSpec.Labels
 				}, HaveKeyWithValue(JobNameLabel, BatchJob)),
+				WithTransform(func(sparkApp *v1beta2.SparkApplication) map[string]string {
+					return sparkApp.Spec.Driver.SparkPodSpec.Labels
+				}, Not(HaveKey(ExecutorPodLabel))),
+				WithTransform(func(sparkApp *v1beta2.SparkApplication) map[string]string {
+					return sparkApp.Spec.Executor.SparkPodSpec.Labels
+				}, HaveKey(ExecutorPodLabel)),
 				WithTransform(func(sparkApp *v1beta2.SparkApplication) string {
 					return *sparkApp.Spec.Driver.SparkPodSpec.SchedulerName
 				}, BeEquivalentTo(SchedulerName)),
