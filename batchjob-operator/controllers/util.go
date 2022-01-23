@@ -7,7 +7,7 @@ import (
 	"strconv"
 )
 
-func CompareResourceVersion(ctx context.Context, rv1 string, rv2 string) bool {
+func DidResourceVersionChange(ctx context.Context, rv1 string, rv2 string) bool {
 	oldRV, err := strconv.Atoi(rv1)
 	if err != nil {
 		ctrllog.FromContext(ctx).Error(err, "Could not extract old Resource Version")

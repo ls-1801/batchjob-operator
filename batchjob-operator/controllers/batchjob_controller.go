@@ -44,7 +44,7 @@ func (c *BatchJobController) manageJob(ctx Context, batchJob *Simple, name Names
 			return
 		}
 
-		if CompareResourceVersion(ctx, old.ResourceVersion, batchJob.ResourceVersion) {
+		if DidResourceVersionChange(ctx, old.ResourceVersion, batchJob.ResourceVersion) {
 			ctrllog.FromContext(ctx).Info("Managed Job changes from Version " +
 				old.ResourceVersion + " to " + batchJob.ResourceVersion)
 		} else {
@@ -67,7 +67,7 @@ func (c *BatchJobController) hasChanged(ctx Context, name NamespacedName, job *S
 		}
 
 		ctrllog.FromContext(ctx).Info("Check for differences", "old", *old, "new", *job)
-		if CompareResourceVersion(ctx, old.ResourceVersion, job.ResourceVersion) {
+		if DidResourceVersionChange(ctx, old.ResourceVersion, job.ResourceVersion) {
 			if !cmp.Equal(old.Status, job.Status) {
 				return toTransitionEnum(ctx, old.Status.State, job.Status.State)
 			} else {

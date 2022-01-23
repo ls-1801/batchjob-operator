@@ -91,7 +91,7 @@ func (r *SimpleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 		switch r.SparkCtrl.hasSparkChanged(ctx, req.NamespacedName, spark) {
 		case SparkNoChange:
-			trigger.Error(errors.New("unexpected loop trigger"), "Loop triggered without change")
+			trigger.Info("Could not identify Event!")
 			return ctrl.Result{}, nil
 		case SparkCreated:
 			trigger.Info("SparkApplication Created")
@@ -103,6 +103,9 @@ func (r *SimpleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		case SparkRunning:
 			trigger.Info("SparkApplication is Now Running")
 			return ctrl.Result{}, r.BatchJobCtrl.UpdateJobStatus(ctx, batchJob, batchjobv1alpha1.RunningState)
+		case SparkCompleted:
+			trigger.Info("SparkApplication has Completed")
+			return ctrl.Result{}, r.BatchJobCtrl.UpdateJobStatus(ctx, batchJob, batchjobv1alpha1.CompletedState)
 		case SparkRemoved:
 			trigger.Info("SparkApplication was removed")
 			return ctrl.Result{}, nil

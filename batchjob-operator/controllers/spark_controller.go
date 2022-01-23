@@ -27,6 +27,8 @@ const (
 	SparkRunning
 	SparkRemoved
 	SparkProblem
+	SparkCompleted
+	SparkFailed
 )
 
 func (sc *SparkController) hasSparkChanged(
@@ -43,7 +45,7 @@ func (sc *SparkController) hasSparkChanged(
 			return SparkRemoved
 		}
 
-		if CompareResourceVersion(ctx, old.ResourceVersion, spark.ResourceVersion) {
+		if DidResourceVersionChange(ctx, old.ResourceVersion, spark.ResourceVersion) {
 			if cmp.Equal(old.Status, spark.Status) {
 				logger.Error(errors.New("no status change"), "SparkApplication has no status change")
 				return SparkNoChange
@@ -68,9 +70,25 @@ func toTransitionEnumSpark(ctx Context, before v1beta2.ApplicationStateType, aft
 		ctrllog.FromContext(ctx).Info("Spark went to Submitted State")
 		return SparkSubmitted
 	}
+
+	if before == v1beta2.NewState && after == v1beta2.SubmittedState {
+		ctrllog.FromContext(ctx).Info("Spark went to Submitted State")
+		return SparkSubmitted
+	}
+
 	if (before == v1beta2.NewState || before == v1beta2.SubmittedState) && after == v1beta2.RunningState {
 		ctrllog.FromContext(ctx).Info("Spark went to Running State")
 		return SparkRunning
+	}
+
+	if after == v1beta2.CompletedState {
+		ctrllog.FromContext(ctx).Info("Spark Job completed")
+		return SparkCompleted
+	}
+
+	if after == v1beta2.FailedState || after == v1beta2.FailingState {
+		ctrllog.FromContext(ctx).Info("Spark Job Failed")
+		return SparkFailed
 	}
 
 	ctrllog.FromContext(ctx).Info("Spark is in an unknown/unhandled state", "before", before, "after", after)
@@ -114,7 +132,7 @@ func (sc *SparkController) manageSpark(ctx Context, nn NamespacedName, spark *v1
 			return
 		}
 
-		if CompareResourceVersion(ctx, old.ResourceVersion, spark.ResourceVersion) {
+		if DidResourceVersionChange(ctx, old.ResourceVersion, spark.ResourceVersion) {
 			ctrllog.FromContext(ctx).Info("Managed SparkApplication changes from Version " +
 				old.ResourceVersion + " to " + spark.ResourceVersion)
 		} else {

@@ -89,6 +89,12 @@ var (
 	namespacedName               = types.NamespacedName{Name: BatchJob, Namespace: BatchJobNamespace}
 )
 
+// Define utility constants for object names and testing timeouts/durations and intervals.
+const (
+	timeout  = time.Second * 10
+	interval = time.Millisecond * 250
+)
+
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
@@ -166,6 +172,32 @@ var _ = AfterSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 })
 
+func testStateTransition(sparkState v1beta2.ApplicationStateType, expectedState batchjobv1alpha1.ApplicationStateType) {
+	By(string("By Mocking the SparkOperator and setting the SparkApplication state to " + sparkState))
+	var sparkApp = &v1beta2.SparkApplication{}
+	err := k8sClient.Get(ctx, namespacedName, sparkApp)
+	Expect(err).ToNot(HaveOccurred())
+
+	sparkApp.Status.AppState.State = sparkState
+	err = k8sClient.Status().Update(ctx, sparkApp)
+	Expect(err).ToNot(HaveOccurred())
+
+	By(string("By checking the BatchJob is now in " + expectedState))
+	Eventually(func() (*batchjobv1alpha1.SimpleStatus, error) {
+
+		createdBatchJob := batchjobv1alpha1.Simple{}
+		err := k8sClient.Get(ctx, namespacedName, &createdBatchJob)
+		if err != nil {
+			return nil, err
+		}
+		return &createdBatchJob.Status, nil
+	}, timeout, interval).Should(
+		WithTransform(func(status *batchjobv1alpha1.SimpleStatus) batchjobv1alpha1.ApplicationStateType {
+			return status.State
+		}, BeEquivalentTo(expectedState)),
+	)
+}
+
 func GET(path string) (*httptest.ResponseRecorder, error) {
 	req, err := http.NewRequest("GET", path, nil)
 	Expect(err).NotTo(HaveOccurred())
@@ -183,12 +215,6 @@ func POST(path string, body io.Reader) (*httptest.ResponseRecorder, error) {
 }
 
 var _ = Describe("CronJob controller", func() {
-
-	// Define utility constants for object names and testing timeouts/durations and intervals.
-	const (
-		timeout  = time.Second * 10
-		interval = time.Millisecond * 250
-	)
 
 	Context("When creating the BatchJob", func() {
 
@@ -406,7 +432,6 @@ var _ = Describe("CronJob controller", func() {
 
 			By("By checking the BatchJob is now Starting")
 			Eventually(func() (*batchjobv1alpha1.SimpleStatus, error) {
-
 				createdBatchJob := batchjobv1alpha1.Simple{}
 				err := k8sClient.Get(ctx, namespacedName, &createdBatchJob)
 				if err != nil {
@@ -419,35 +444,11 @@ var _ = Describe("CronJob controller", func() {
 				}, BeEquivalentTo(batchjobv1alpha1.SubmittedState)),
 			)
 
-			By("By Mocking the SparkOperator")
-			var sparkApp = &v1beta2.SparkApplication{}
-			err = k8sClient.Get(ctx, namespacedName, sparkApp)
-			Expect(err).ToNot(HaveOccurred())
-
-			sparkApp.Status.AppState.State = v1beta2.SubmittedState
-			err = k8sClient.Status().Update(ctx, sparkApp)
-			Expect(err).ToNot(HaveOccurred())
-
-			time.Sleep(5000)
-
-			sparkApp.Status.AppState.State = v1beta2.RunningState
-			err = k8sClient.Status().Update(ctx, sparkApp)
-			Expect(err).ToNot(HaveOccurred())
-
-			By("By checking the BatchJob is now Running")
-			Eventually(func() (*batchjobv1alpha1.SimpleStatus, error) {
-
-				createdBatchJob := batchjobv1alpha1.Simple{}
-				err := k8sClient.Get(ctx, namespacedName, &createdBatchJob)
-				if err != nil {
-					return nil, err
-				}
-				return &createdBatchJob.Status, nil
-			}, timeout, interval).Should(
-				WithTransform(func(status *batchjobv1alpha1.SimpleStatus) batchjobv1alpha1.ApplicationStateType {
-					return status.State
-				}, BeEquivalentTo(batchjobv1alpha1.RunningState)),
-			)
+			testStateTransition(v1beta2.SubmittedState, batchjobv1alpha1.SubmittedState)
+			time.Sleep(1000)
+			testStateTransition(v1beta2.RunningState, batchjobv1alpha1.RunningState)
+			time.Sleep(1000)
+			testStateTransition(v1beta2.CompletedState, batchjobv1alpha1.CompletedState)
 
 		})
 		It("Should delete SparkApplication if BatchJob is deleted", func() {
