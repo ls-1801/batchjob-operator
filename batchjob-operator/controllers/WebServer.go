@@ -11,7 +11,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	extenderv1 "k8s.io/kube-scheduler/extender/v1"
-	"log"
 	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
@@ -145,7 +144,6 @@ func (ws *WebServer) Filter(w http.ResponseWriter, r *http.Request, _ httprouter
 	if resultBody, err := json.Marshal(filterResult); err != nil {
 		panic(err)
 	} else {
-		log.Print(" extenderFilterResult = ", string(resultBody))
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write(resultBody)
