@@ -128,6 +128,7 @@ var _ = BeforeSuite(func() {
 	var reconciler = &SimpleReconciler{
 		Client:       k8sManager.GetClient(),
 		Scheme:       k8sManager.GetScheme(),
+		Record:       k8sManager.GetEventRecorderFor("BatchJob-Controller"),
 		BatchJobCtrl: nil,
 		SparkCtrl:    nil,
 		WebServer:    nil,
@@ -439,9 +440,14 @@ var _ = Describe("CronJob controller", func() {
 				}
 				return &createdBatchJob.Status, nil
 			}, timeout, interval).Should(
-				WithTransform(func(status *batchjobv1alpha1.BatchJobStatus) batchjobv1alpha1.ApplicationStateType {
-					return status.State
-				}, BeEquivalentTo(batchjobv1alpha1.SubmittedState)),
+				And(
+					WithTransform(func(status *batchjobv1alpha1.BatchJobStatus) batchjobv1alpha1.ApplicationStateType {
+						return status.State
+					}, BeEquivalentTo(batchjobv1alpha1.SubmittedState)),
+					WithTransform(func(status *batchjobv1alpha1.BatchJobStatus) []*batchjobv1alpha1.BatchJobScheduledEvent {
+						return status.ScheduleEvents
+					}, And(Not(BeNil()), HaveLen(1))),
+				),
 			)
 
 			testStateTransition(v1beta2.SubmittedState, batchjobv1alpha1.SubmittedState)

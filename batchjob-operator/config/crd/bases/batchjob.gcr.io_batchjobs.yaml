@@ -4730,6 +4730,23 @@ spec:
             type: object
           status:
             properties:
+              schedule-events:
+                items:
+                  properties:
+                    finish:
+                      format: date-time
+                      type: string
+                    scheduled-node:
+                      type: string
+                    start:
+                      format: date-time
+                      type: string
+                    successful:
+                      type: boolean
+                  required:
+                  - start
+                  type: object
+                type: array
               state:
                 type: string
             required:

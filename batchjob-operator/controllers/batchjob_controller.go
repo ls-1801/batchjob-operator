@@ -6,9 +6,11 @@ import (
 	"github.com/google/go-cmp/cmp"
 	. "github.com/ls-1801/batchjob-operator/api/v1alpha1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	. "k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
+	"time"
 )
 
 type BatchJobController struct {
@@ -136,7 +138,7 @@ func (c *BatchJobController) UpdateJobStatus(context Context, job *BatchJob, sta
 	copiedJob.Status.State = state
 	ctrllog.FromContext(context).Info("Updating Status of Job", "job", copiedJob, "New-State", state)
 	if err := c.Client.Status().Update(context, copiedJob); err != nil {
-		ctrllog.FromContext(context).Error(err, "Failed to update BatchJob Status", err)
+		ctrllog.FromContext(context).Error(err, "Failed to update BatchJob Status")
 		return err
 	}
 	return nil
@@ -145,6 +147,42 @@ func (c *BatchJobController) UpdateJobStatus(context Context, job *BatchJob, sta
 func (c *BatchJobController) ResumeBatchJob(ctx Context, job *BatchJob, spark *v1beta2.SparkApplication) error {
 	ctrllog.FromContext(ctx).Info("Resuming BatchJob from already existing SparkApplication")
 	//TODO: Figure out how to react here. Maybe copying the SparkStatus would be an idea.
+
+	return nil
+}
+
+func (c *BatchJobController) AddStartEvent(ctx Context, job *BatchJob) error {
+	var now = metav1.NewTime(time.Now())
+	job.Status.ScheduleEvents = append(job.Status.ScheduleEvents, &BatchJobScheduledEvent{
+		StartTimestamp:  &now,
+		FinishTimestamp: nil,
+		Successful:      nil,
+		ScheduledNode:   "TODO",
+	})
+
+	if err := c.Client.Status().Update(ctx, job); err != nil {
+		ctrllog.FromContext(ctx).Error(err, "Failed to update BatchJob Status")
+		return err
+	}
+	return nil
+}
+
+func (c *BatchJobController) AddStopEvent(ctx Context, job *BatchJob, successful bool) error {
+	var now = metav1.NewTime(time.Now())
+
+	for _, event := range job.Status.ScheduleEvents {
+		if event.FinishTimestamp != nil {
+			continue
+		}
+
+		event.FinishTimestamp = &now
+		event.Successful = &successful
+	}
+
+	if err := c.Client.Status().Update(ctx, job); err != nil {
+		ctrllog.FromContext(ctx).Error(err, "Failed to update BatchJob Status")
+		return err
+	}
 
 	return nil
 }

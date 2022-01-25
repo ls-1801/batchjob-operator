@@ -82,6 +82,7 @@ func main() {
 	var reconciler = &controllers.SimpleReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
+		Record: mgr.GetEventRecorderFor("BatchJob-Controller"),
 	}
 
 	reconciler.JobQueue = controllers.NewJobQueue()

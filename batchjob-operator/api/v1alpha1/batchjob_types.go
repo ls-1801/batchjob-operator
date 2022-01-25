@@ -39,7 +39,15 @@ type BatchJobSpec struct {
 type BatchJobStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	State ApplicationStateType `json:"state"`
+	State          ApplicationStateType      `json:"state"`
+	ScheduleEvents []*BatchJobScheduledEvent `json:"schedule-events,omitempty"`
+}
+
+type BatchJobScheduledEvent struct {
+	StartTimestamp  *metav1.Time `json:"start"`
+	FinishTimestamp *metav1.Time `json:"finish,omitempty"`
+	Successful      *bool        `json:"successful,omitempty"`
+	ScheduledNode   string       `json:"scheduled-node,omitempty"`
 }
 
 // ApplicationStateType represents the type of the current state of an application.

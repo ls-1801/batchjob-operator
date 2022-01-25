@@ -19,8 +19,10 @@ package controllers
 import (
 	"context"
 	"errors"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
@@ -39,6 +41,7 @@ type SimpleReconciler struct {
 	BatchJobCtrl *BatchJobController
 	SparkCtrl    *SparkController
 	JobQueue     *JobQueue
+	Record       record.EventRecorder
 }
 
 type JobDescription struct {
@@ -54,6 +57,7 @@ type PodDescription struct {
 //+kubebuilder:rbac:groups=batchjob.gcr.io,resources=batchjobs/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=batchjob.gcr.io,resources=batchjobs/finalizers,verbs=update
 //+kubebuilder:rbac:groups=sparkoperator.k8s.io,resources=sparkapplications,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=events,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
 //+kubebuilder:rbac:groups=core,resources=nodes,verbs=get;list;watch
 
@@ -74,13 +78,13 @@ func (r *SimpleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-
 	// Figure out what happened and why the loop was triggered
 	switch r.BatchJobCtrl.GetBatchJobChange(ctx, req.NamespacedName, batchJob) {
 	case Removed:
 		trigger.Info("BatchJob was removed")
 		return ctrl.Result{}, r.SparkCtrl.DeleteLinkedSpark(ctx, req.NamespacedName)
 	case NewJob:
+		r.Record.Eventf(batchJob, v1.EventTypeNormal, "New Job", "New Job Detected")
 		trigger.Info("New BatchJob")
 		return r.handleNewJob(ctx, batchJob)
 	case NoChange:
@@ -106,14 +110,20 @@ func (r *SimpleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			trigger.Info("SparkApp is now in Submitted State")
 			return ctrl.Result{}, nil
 		case SparkRunning:
+			_ = r.BatchJobCtrl.AddStartEvent(ctx, batchJob)
 			trigger.Info("SparkApplication is Now Running")
 			return ctrl.Result{}, r.BatchJobCtrl.UpdateJobStatus(ctx, batchJob, batchjobv1alpha1.RunningState)
 		case SparkSucceeding:
 			trigger.Info("SparkApplication is Succeeding")
 			return ctrl.Result{}, r.BatchJobCtrl.UpdateJobStatus(ctx, batchJob, batchjobv1alpha1.CompletedState)
 		case SparkCompleted:
+			_ = r.BatchJobCtrl.AddStopEvent(ctx, batchJob, true)
 			trigger.Info("SparkApplication has Completed")
 			return ctrl.Result{}, r.BatchJobCtrl.UpdateJobStatus(ctx, batchJob, batchjobv1alpha1.CompletedState)
+		case SparkFailed:
+			_ = r.BatchJobCtrl.AddStopEvent(ctx, batchJob, false)
+			trigger.Info("SparkApplication has Completed")
+			return ctrl.Result{}, r.BatchJobCtrl.UpdateJobStatus(ctx, batchJob, batchjobv1alpha1.FailedState)
 		case SparkRemoved:
 			trigger.Info("SparkApplication was removed")
 			return ctrl.Result{}, nil
@@ -125,6 +135,7 @@ func (r *SimpleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			return ctrl.Result{}, errors.New("unexpected spark change")
 		}
 	case InQueue:
+		r.Record.Eventf(batchJob, v1.EventTypeNormal, "Added to Queue", "BatchJob was added to Queue")
 		trigger.Info("Job is now in Queue", "job", req.NamespacedName)
 	case Submitted:
 		trigger.Info("Job is now in Submitted, remove it from the Queue", "job", req.NamespacedName)
