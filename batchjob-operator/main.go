@@ -89,7 +89,7 @@ func main() {
 	reconciler.BatchJobCtrl = controllers.NewBatchJobController(mgr.GetClient())
 
 	if err = (reconciler).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Simple")
+		setupLog.Error(err, "unable to create controller", "controller", "BatchJob")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

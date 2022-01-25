@@ -18,7 +18,7 @@ const ExecutorPodLabel = "external-scheduling-executor-pod"
 var SchedulerName = "my-scheduler"
 
 type ScheduleExecutor struct {
-	SchedulingDecision map[*v1.Node][]*v1alpha1.Simple
+	SchedulingDecision map[*v1.Node][]*v1alpha1.BatchJob
 }
 
 func findNode(nodeName string, list v1.NodeList) *v1.Node {
@@ -31,7 +31,7 @@ func findNode(nodeName string, list v1.NodeList) *v1.Node {
 	return nil
 }
 
-func findJob(nn types.NamespacedName, list v1alpha1.SimpleList) *v1alpha1.Simple {
+func findJob(nn types.NamespacedName, list v1alpha1.BatchJobList) *v1alpha1.BatchJob {
 	for _, job := range list.Items {
 		if job.Name == nn.Name && job.Namespace == nn.Namespace {
 			return &job
@@ -51,12 +51,12 @@ func NewScheduleExecutor(
 		ctrllog.FromContext(ctx).Error(err, "Could not List Nodes in the Cluster")
 	}
 
-	var jobList = v1alpha1.SimpleList{}
+	var jobList = v1alpha1.BatchJobList{}
 	if err := client.Client.List(ctx, &jobList); err != nil {
 		ctrllog.FromContext(ctx).Error(err, "Could not List Jobs in the Cluster")
 	}
 
-	var concrete = map[*v1.Node][]*v1alpha1.Simple{}
+	var concrete = map[*v1.Node][]*v1alpha1.BatchJob{}
 
 	for nodeName, jobNames := range desired {
 		var cNode = findNode(nodeName, nodeList)
@@ -64,7 +64,7 @@ func NewScheduleExecutor(
 			return errors.New("node does not exist: " + nodeName), nil
 		}
 
-		var concreteJobs []*v1alpha1.Simple
+		var concreteJobs []*v1alpha1.BatchJob
 		for _, jobName := range jobNames {
 			var cJob = findJob(jobName, jobList)
 			if cJob == nil {
@@ -101,7 +101,7 @@ func (se *ScheduleExecutor) Execute(ctx context.Context, client *SimpleReconcile
 
 }
 
-func (se *ScheduleExecutor) createJobForNode(ctx context.Context, client *SimpleReconciler, job *v1alpha1.Simple,
+func (se *ScheduleExecutor) createJobForNode(ctx context.Context, client *SimpleReconciler, job *v1alpha1.BatchJob,
 	node *v1.Node) (error,
 	*sparkv1beta2.SparkApplication) {
 	ctrllog.FromContext(ctx).Info("Creating SparkApplication from Job", "job", job)
@@ -143,7 +143,7 @@ func setAnnotations(spark *sparkv1beta2.SparkApplication, node *v1.Node) {
 	spark.Spec.Executor.SparkPodSpec.Annotations[DesiredNodeAnnotation] = node.Name
 }
 
-func setLabels(spark *sparkv1beta2.SparkApplication, job *v1alpha1.Simple) {
+func setLabels(spark *sparkv1beta2.SparkApplication, job *v1alpha1.BatchJob) {
 	if spark.Spec.Driver.SparkPodSpec.Labels == nil {
 		spark.Spec.Driver.SparkPodSpec.Labels = make(map[string]string)
 	}

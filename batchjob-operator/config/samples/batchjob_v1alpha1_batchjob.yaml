@@ -1,7 +1,7 @@
 apiVersion: batchjob.gcr.io/v1alpha1
-kind: Simple
+kind: BatchJob
 metadata:
-  name: simple-sample
+  name: batchjob-sample
 spec:
   foo: yo!
   spec:

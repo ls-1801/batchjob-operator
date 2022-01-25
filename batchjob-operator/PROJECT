@@ -13,7 +13,7 @@ resources:
   controller: true
   domain: gcr.io
   group: batchjob
-  kind: Simple
+  kind: BatchJob
   path: github.com/ls-1801/batchjob-operator/api/v1alpha1
   version: v1alpha1
 version: "3"

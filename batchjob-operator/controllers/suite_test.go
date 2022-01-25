@@ -84,9 +84,9 @@ var (
 	cancel            context.CancelFunc
 	WS                *WebServer = nil
 	TestNode          string     = "test-node"
-	BatchJob                     = "test-cronjob"
+	BatchJobName                 = "test-cronjob"
 	BatchJobNamespace            = "default"
-	namespacedName               = types.NamespacedName{Name: BatchJob, Namespace: BatchJobNamespace}
+	namespacedName               = types.NamespacedName{Name: BatchJobName, Namespace: BatchJobNamespace}
 )
 
 // Define utility constants for object names and testing timeouts/durations and intervals.
@@ -183,16 +183,16 @@ func testStateTransition(sparkState v1beta2.ApplicationStateType, expectedState 
 	Expect(err).ToNot(HaveOccurred())
 
 	By(string("By checking the BatchJob is now in " + expectedState))
-	Eventually(func() (*batchjobv1alpha1.SimpleStatus, error) {
+	Eventually(func() (*batchjobv1alpha1.BatchJobStatus, error) {
 
-		createdBatchJob := batchjobv1alpha1.Simple{}
+		createdBatchJob := batchjobv1alpha1.BatchJob{}
 		err := k8sClient.Get(ctx, namespacedName, &createdBatchJob)
 		if err != nil {
 			return nil, err
 		}
 		return &createdBatchJob.Status, nil
 	}, timeout, interval).Should(
-		WithTransform(func(status *batchjobv1alpha1.SimpleStatus) batchjobv1alpha1.ApplicationStateType {
+		WithTransform(func(status *batchjobv1alpha1.BatchJobStatus) batchjobv1alpha1.ApplicationStateType {
 			return status.State
 		}, BeEquivalentTo(expectedState)),
 	)
@@ -244,16 +244,16 @@ var _ = Describe("CronJob controller", func() {
 				MainClassApplicationFile = "local:///opt/spark/examples/jars/spark-examples_2.12-3.1.1.jar"
 			)
 
-			batchJob := &batchjobv1alpha1.Simple{
+			batchJob := &batchjobv1alpha1.BatchJob{
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: "batchjob.gcr.io/v1alpha1",
-					Kind:       "Simple",
+					Kind:       "BatchJob",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      BatchJob,
+					Name:      BatchJobName,
 					Namespace: BatchJobNamespace,
 				},
-				Spec: batchjobv1alpha1.SimpleSpec{
+				Spec: batchjobv1alpha1.BatchJobSpec{
 					Foo: "SomeThing",
 					Spec: v1beta2.SparkApplicationSpec{
 						Type:            "Scala",
@@ -304,10 +304,10 @@ var _ = Describe("CronJob controller", func() {
 					WithTransform(func(p []JobDescription) int { return len(p) },
 						BeIdenticalTo(1)),
 					WithTransform(func(p []JobDescription) string { return p[0].JobName.Name },
-						Equal(BatchJob)),
+						Equal(BatchJobName)),
 				))
 
-			createdBatchJob := &batchjobv1alpha1.Simple{}
+			createdBatchJob := &batchjobv1alpha1.BatchJob{}
 
 			Eventually(func() bool {
 				err := k8sClient.Get(ctx, namespacedName, createdBatchJob)
@@ -357,12 +357,12 @@ var _ = Describe("CronJob controller", func() {
 					WithTransform(func(p []JobDescription) int { return len(p) },
 						BeIdenticalTo(1)),
 					WithTransform(func(p []JobDescription) string { return p[0].JobName.Name },
-						Equal(BatchJob)),
+						Equal(BatchJobName)),
 				))
 
 			By("Submitting a SchedulingDecision")
 			var desiredScheduling = make(map[string][]types.NamespacedName)
-			desiredScheduling[TestNode] = []types.NamespacedName{{Name: BatchJob, Namespace: BatchJobNamespace}}
+			desiredScheduling[TestNode] = []types.NamespacedName{{Name: BatchJobName, Namespace: BatchJobNamespace}}
 			payloadBuf := new(bytes.Buffer)
 			err := json.NewEncoder(payloadBuf).Encode(desiredScheduling)
 			Expect(err).NotTo(HaveOccurred())
@@ -391,10 +391,10 @@ var _ = Describe("CronJob controller", func() {
 				}, HaveKeyWithValue(DesiredNodeAnnotation, TestNode)),
 				WithTransform(func(sparkApp *v1beta2.SparkApplication) map[string]string {
 					return sparkApp.Spec.Driver.SparkPodSpec.Labels
-				}, HaveKeyWithValue(JobNameLabel, BatchJob)),
+				}, HaveKeyWithValue(JobNameLabel, BatchJobName)),
 				WithTransform(func(sparkApp *v1beta2.SparkApplication) map[string]string {
 					return sparkApp.Spec.Executor.SparkPodSpec.Labels
-				}, HaveKeyWithValue(JobNameLabel, BatchJob)),
+				}, HaveKeyWithValue(JobNameLabel, BatchJobName)),
 				WithTransform(func(sparkApp *v1beta2.SparkApplication) map[string]string {
 					return sparkApp.Spec.Driver.SparkPodSpec.Labels
 				}, Not(HaveKey(ExecutorPodLabel))),
@@ -431,15 +431,15 @@ var _ = Describe("CronJob controller", func() {
 			}, timeout, interval).Should(BeEmpty())
 
 			By("By checking the BatchJob is now Starting")
-			Eventually(func() (*batchjobv1alpha1.SimpleStatus, error) {
-				createdBatchJob := batchjobv1alpha1.Simple{}
+			Eventually(func() (*batchjobv1alpha1.BatchJobStatus, error) {
+				createdBatchJob := batchjobv1alpha1.BatchJob{}
 				err := k8sClient.Get(ctx, namespacedName, &createdBatchJob)
 				if err != nil {
 					return nil, err
 				}
 				return &createdBatchJob.Status, nil
 			}, timeout, interval).Should(
-				WithTransform(func(status *batchjobv1alpha1.SimpleStatus) batchjobv1alpha1.ApplicationStateType {
+				WithTransform(func(status *batchjobv1alpha1.BatchJobStatus) batchjobv1alpha1.ApplicationStateType {
 					return status.State
 				}, BeEquivalentTo(batchjobv1alpha1.SubmittedState)),
 			)
@@ -456,7 +456,7 @@ var _ = Describe("CronJob controller", func() {
 		It("Should delete SparkApplication if BatchJob is deleted", func() {
 
 			By("verifying the BatchJob does exist")
-			batchJob := batchjobv1alpha1.Simple{}
+			batchJob := batchjobv1alpha1.BatchJob{}
 			err := k8sClient.Get(ctx, namespacedName, &batchJob)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -466,7 +466,7 @@ var _ = Describe("CronJob controller", func() {
 
 			By("verifying that the BatchJob was deleted")
 			Eventually(func() bool {
-				batchJob := &batchjobv1alpha1.Simple{}
+				batchJob := &batchjobv1alpha1.BatchJob{}
 				err := k8sClient.Get(ctx, namespacedName, batchJob)
 				return k8serrors.IsNotFound(err)
 			}, timeout, interval).Should(BeTrue())

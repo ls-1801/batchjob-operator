@@ -13,11 +13,11 @@ import (
 
 type BatchJobController struct {
 	client.Client
-	ManagedJobs map[NamespacedName]*Simple
+	ManagedJobs map[NamespacedName]*BatchJob
 }
 
 func NewBatchJobController(client client.Client) *BatchJobController {
-	return &BatchJobController{Client: client, ManagedJobs: map[NamespacedName]*Simple{}}
+	return &BatchJobController{Client: client, ManagedJobs: map[NamespacedName]*BatchJob{}}
 }
 
 const (
@@ -31,7 +31,7 @@ const (
 	UnknownChange
 )
 
-func (c *BatchJobController) manageJob(ctx Context, batchJob *Simple, name NamespacedName) {
+func (c *BatchJobController) manageJob(ctx Context, batchJob *BatchJob, name NamespacedName) {
 	if old, ok := c.ManagedJobs[name]; !ok {
 		if batchJob == nil {
 			return
@@ -56,7 +56,7 @@ func (c *BatchJobController) manageJob(ctx Context, batchJob *Simple, name Names
 	c.ManagedJobs[name] = batchJob
 }
 
-func (c *BatchJobController) GetBatchJobChange(ctx Context, name NamespacedName, job *Simple) int {
+func (c *BatchJobController) GetBatchJobChange(ctx Context, name NamespacedName, job *BatchJob) int {
 	defer func() { c.manageJob(ctx, job, name) }()
 
 	if old, ok := c.ManagedJobs[name]; ok {
@@ -113,8 +113,8 @@ func toTransitionEnum(ctx Context, before ApplicationStateType, after Applicatio
 	return UnknownChange
 }
 
-func (c *BatchJobController) getBatchJob(context Context, name NamespacedName) (error, *Simple) {
-	var batchJob = &Simple{}
+func (c *BatchJobController) getBatchJob(context Context, name NamespacedName) (error, *BatchJob) {
+	var batchJob = &BatchJob{}
 	ctrllog.FromContext(context).V(TRACE).Info("Get BatchJob", "Namespaced-Name", name)
 	var err = c.Client.Get(context, name, batchJob)
 
@@ -126,7 +126,7 @@ func (c *BatchJobController) getBatchJob(context Context, name NamespacedName) (
 	return err, batchJob
 }
 
-func (c *BatchJobController) UpdateJobStatus(context Context, job *Simple, state ApplicationStateType) error {
+func (c *BatchJobController) UpdateJobStatus(context Context, job *BatchJob, state ApplicationStateType) error {
 	if job.Status.State == state {
 		ctrllog.FromContext(context).Info("Job already in desired state", "New-State", state)
 		return nil
@@ -142,7 +142,7 @@ func (c *BatchJobController) UpdateJobStatus(context Context, job *Simple, state
 	return nil
 }
 
-func (c *BatchJobController) ResumeBatchJob(ctx Context, job *Simple, spark *v1beta2.SparkApplication) error {
+func (c *BatchJobController) ResumeBatchJob(ctx Context, job *BatchJob, spark *v1beta2.SparkApplication) error {
 	ctrllog.FromContext(ctx).Info("Resuming BatchJob from already existing SparkApplication")
 	//TODO: Figure out how to react here. Maybe copying the SparkStatus would be an idea.
 

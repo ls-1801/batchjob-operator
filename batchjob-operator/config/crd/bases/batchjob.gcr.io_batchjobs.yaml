@@ -6,14 +6,14 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.6.1
   creationTimestamp: null
-  name: simples.batchjob.gcr.io
+  name: batchjobs.batchjob.gcr.io
 spec:
   group: batchjob.gcr.io
   names:
-    kind: Simple
-    listKind: SimpleList
-    plural: simples
-    singular: simple
+    kind: BatchJob
+    listKind: BatchJobList
+    plural: batchjobs
+    singular: batchjob
   scope: Namespaced
   versions:
   - name: v1alpha1

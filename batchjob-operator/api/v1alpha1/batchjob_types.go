@@ -25,18 +25,18 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// SimpleSpec defines the desired state of Simple
-type SimpleSpec struct {
+// BatchJobSpec defines the desired state of BatchJob
+type BatchJobSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Simple. Edit simple_types.go to remove/update
+	// Foo is an example field of BatchJob. Edit batchjob_types.go to remove/update
 	Foo  string                       `json:"foo,omitempty"`
 	Spec v1beta2.SparkApplicationSpec `json:"spec"`
 }
 
-// SimpleStatus defines the observed state of Simple
-type SimpleStatus struct {
+// BatchJobStatus defines the observed state of BatchJob
+type BatchJobStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 	State ApplicationStateType `json:"state"`
@@ -63,61 +63,61 @@ const (
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// Simple is the Schema for the simples API
-type Simple struct {
+// BatchJob is the Schema for the batchjobs API
+type BatchJob struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   SimpleSpec   `json:"spec,omitempty"`
-	Status SimpleStatus `json:"status,omitempty"`
+	Spec   BatchJobSpec   `json:"spec,omitempty"`
+	Status BatchJobStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// SimpleList contains a list of Simple
-type SimpleList struct {
+// BatchJobList contains a list of BatchJob
+type BatchJobList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Simple `json:"items"`
+	Items           []BatchJob `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Simple{}, &SimpleList{})
+	SchemeBuilder.Register(&BatchJob{}, &BatchJobList{})
 	SchemeBuilderSpark.Register(&v1beta2.SparkApplication{}, &v1beta2.SparkApplicationList{})
 }
 
 // PrometheusMonitoringEnabled returns if Prometheus monitoring is enabled or not.
-func (s *Simple) PrometheusMonitoringEnabled() bool {
+func (s *BatchJob) PrometheusMonitoringEnabled() bool {
 	return s.Spec.Spec.Monitoring != nil && s.Spec.Spec.Monitoring.Prometheus != nil
 }
 
 // HasPrometheusConfigFile returns if Prometheus monitoring uses a configuration file in the container.
-func (s *Simple) HasPrometheusConfigFile() bool {
+func (s *BatchJob) HasPrometheusConfigFile() bool {
 	return s.PrometheusMonitoringEnabled() &&
 		s.Spec.Spec.Monitoring.Prometheus.ConfigFile != nil &&
 		*s.Spec.Spec.Monitoring.Prometheus.ConfigFile != ""
 }
 
 // HasPrometheusConfig returns if Prometheus monitoring defines metricsProperties in the spec.
-func (s *Simple) HasMetricsProperties() bool {
+func (s *BatchJob) HasMetricsProperties() bool {
 	return s.PrometheusMonitoringEnabled() &&
 		s.Spec.Spec.Monitoring.MetricsProperties != nil &&
 		*s.Spec.Spec.Monitoring.MetricsProperties != ""
 }
 
 // HasPrometheusConfigFile returns if Monitoring defines metricsPropertiesFile in the spec.
-func (s *Simple) HasMetricsPropertiesFile() bool {
+func (s *BatchJob) HasMetricsPropertiesFile() bool {
 	return s.PrometheusMonitoringEnabled() &&
 		s.Spec.Spec.Monitoring.MetricsPropertiesFile != nil &&
 		*s.Spec.Spec.Monitoring.MetricsPropertiesFile != ""
 }
 
 // ExposeDriverMetrics returns if driver metrics should be exposed.
-func (s *Simple) ExposeDriverMetrics() bool {
+func (s *BatchJob) ExposeDriverMetrics() bool {
 	return s.Spec.Spec.Monitoring != nil && s.Spec.Spec.Monitoring.ExposeDriverMetrics
 }
 
 // ExposeExecutorMetrics returns if executor metrics should be exposed.
-func (s *Simple) ExposeExecutorMetrics() bool {
+func (s *BatchJob) ExposeExecutorMetrics() bool {
 	return s.Spec.Spec.Monitoring != nil && s.Spec.Spec.Monitoring.ExposeExecutorMetrics
 }

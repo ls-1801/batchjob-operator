@@ -1,4 +1,4 @@
 ## Append samples you want in your CSV to this file as resources ##
 resources:
-- batchjob_v1alpha1_simple.yaml
+- batchjob_v1alpha1_batchjob.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

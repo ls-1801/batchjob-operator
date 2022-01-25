@@ -1,20 +1,20 @@
-# permissions for end users to view simples.
+# permissions for end users to view batchjobs.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: simple-viewer-role
+  name: batchjob-viewer-role
 rules:
 - apiGroups:
-  - batchjob.gcr.io
+  - batchjob.gcr.io.gcr.io
   resources:
-  - simples
+  - batchjobs
   verbs:
   - get
   - list
   - watch
 - apiGroups:
-  - batchjob.gcr.io
+  - batchjob.gcr.io.gcr.io
   resources:
-  - simples/status
+  - batchjobs/status
   verbs:
   - get

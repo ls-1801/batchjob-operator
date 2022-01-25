@@ -31,7 +31,7 @@ import (
 
 const TRACE = 100
 
-// SimpleReconciler reconciles a Simple object
+// SimpleReconciler reconciles a BatchJob object
 type SimpleReconciler struct {
 	client.Client
 	Scheme       *runtime.Scheme
@@ -50,9 +50,9 @@ type PodDescription struct {
 	NodeName string
 }
 
-//+kubebuilder:rbac:groups=batchjob.gcr.io,resources=simples,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=batchjob.gcr.io,resources=simples/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=batchjob.gcr.io,resources=simples/finalizers,verbs=update
+//+kubebuilder:rbac:groups=batchjob.gcr.io,resources=batchjobs,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=batchjob.gcr.io,resources=batchjobs/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=batchjob.gcr.io,resources=batchjobs/finalizers,verbs=update
 //+kubebuilder:rbac:groups=sparkoperator.k8s.io,resources=sparkapplications,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
 //+kubebuilder:rbac:groups=core,resources=nodes,verbs=get;list;watch
@@ -60,7 +60,7 @@ type PodDescription struct {
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 // TODO(user): Modify the Reconcile function to compare the state specified by
-// the Simple object against the actual cluster state, and then
+// the BatchJob object against the actual cluster state, and then
 // perform operations to make the cluster state reflect the state specified by
 // the user.
 //
@@ -150,12 +150,12 @@ func (r *SimpleReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&batchjobv1alpha1.Simple{}).
+		For(&batchjobv1alpha1.BatchJob{}).
 		Owns(&sparkv1beta2.SparkApplication{}).
 		Complete(r)
 }
 
-func (r *SimpleReconciler) handleNewJob(ctx context.Context, job *batchjobv1alpha1.Simple) (ctrl.Result, error) {
+func (r *SimpleReconciler) handleNewJob(ctx context.Context, job *batchjobv1alpha1.BatchJob) (ctrl.Result, error) {
 
 	sparkApplicationName := types.NamespacedName{Name: job.Name, Namespace: job.Namespace}
 	err, spark := r.SparkCtrl.LinkedSparkApplication(ctx, sparkApplicationName)

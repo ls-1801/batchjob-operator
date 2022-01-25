@@ -1,13 +1,13 @@
-# permissions for end users to edit simples.
+# permissions for end users to edit batchjobs.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: simple-editor-role
+  name: batchjob-editor-role
 rules:
 - apiGroups:
-  - batchjob.gcr.io
+  - batchjob.gcr.io.gcr.io
   resources:
-  - simples
+  - batchjobs
   verbs:
   - create
   - delete
@@ -17,8 +17,8 @@ rules:
   - update
   - watch
 - apiGroups:
-  - batchjob.gcr.io
+  - batchjob.gcr.io.gcr.io
   resources:
-  - simples/status
+  - batchjobs/status
   verbs:
   - get
