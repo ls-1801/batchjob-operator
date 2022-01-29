@@ -28,7 +28,7 @@ Extender is a set of API endpoints
 - /bind
  Delegates binding
  - Arguments: Binding (which is essentially Pod + TargetNode)
- - Expects: Error if occured
+ - Expects: Error if occurred
 - /preempt
  ProcessPreemption returns nodes with their victim pods processed by extender based on given:
  1. Pod to schedule
