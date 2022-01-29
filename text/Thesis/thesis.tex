@@ -1,0 +1,43 @@
+
+\input{layout.tex}
+
+% Front Matter
+
+\newcommand{\titleLineOne}{Detection of Higher-Level Concepts}
+\newcommand{\titleLineTwo}{ in Highly-Linked Big Data}
+\newcommand{\titleLineThree}{}
+\newcommand{\documentdate}{December 22, 2015}
+\newcommand{\studentname}{Max Mustermann}
+\newcommand{\abstracttextde}{Kurze Zusammenfassung der Arbeit in 250 W\"ortern.}
+\newcommand{\abstracttext}{Short version of the thesis in 250 words.}
+\newcommand{\acktext}{This chapter is optional. First of all, I would like to...}
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+
+
+\begin{document} 
+
+\input{frontmatter.tex}
+
+% Body Matter (use input to add chapters)
+
+\input{tex/introduction.tex}
+
+\input{tex/background.tex}
+
+\input{tex/related_work.tex}
+
+\input{tex/approach.tex}
+
+\input{tex/evaluation.tex}
+
+\input{tex/open_questions.tex}
+
+\input{tex/conclusion.tex}
+
+
+% Back Matter (use input to add appendices, if really needed)
+
+\input{bib.tex}
+
+\end{document}
