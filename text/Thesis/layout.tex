@@ -55,19 +55,19 @@
   \vskip\belowcaptionskip}
 \makeatother   % Cancel the effect of \makeatletter
 
-%% clear page before new chapter
-\makeatletter
-\def\cleardoublepage{\clearpage\if@twoside \ifodd\c@page\else
-\hbox{}
-\vspace*{\fill}
-\begin{center}
-%This page intentionally contains only this sentence.
-\end{center}
-\vspace{\fill}
-\thispagestyle{empty}
-\newpage
-\if@twocolumn\hbox{}\newpage\fi\fi\fi}
-\makeatother
+% % clear page before new chapter
+% \makeatletter
+% \def\cleardoublepage{\clearpage\if@twoside \ifodd\c@page\else
+% \hbox{}
+% \vspace*{\fill}
+% \begin{center}
+% %This page intentionally contains only this sentence.
+% \end{center}
+% \vspace{\fill}
+% \thispagestyle{empty}
+% \newpage
+% \if@twocolumn\hbox{}\newpage\fi\fi\fi}
+% \makeatother
 
 %% abbreviations
 \usepackage{nomencl}
@@ -86,9 +86,9 @@
 \titleformat{\chapter}[display]{ \raggedleft }{\fontsize{52}{63}\selectfont \bf \thechapter }{0.2cm}{\fontsize{32}{38.7}\selectfont  }[]
 
 %% haeder formatting
-\renewcommand{\chaptermark}[1]{%
-\markboth{\chaptername
-\ \thechapter.\ #1}{}}
+% \renewcommand{\chaptermark}[1]{%
+% \markboth{\chaptername
+% \ \thechapter.\ #1}{}}
 \renewcommand{\sectionmark}[1]{\markright{\thesection.\ #1}}
 \usepackage{fancyhdr}
 \pagestyle{fancy}

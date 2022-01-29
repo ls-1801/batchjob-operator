@@ -1,0 +1,1 @@
+This Section should give the Reader a Background to Kubernetes and maybe other Cluster Management Systems like YARN and compare them. Also this should explain why this work is only Focused on Kubernetes

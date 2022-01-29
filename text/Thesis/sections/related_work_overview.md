@@ -1,0 +1,1 @@
+Explain that both kubernetes and big data scheduling are huge topics with lots of related work

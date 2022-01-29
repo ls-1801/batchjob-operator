@@ -1,0 +1,13 @@
+*.toc
+*.out
+*.nlo
+*.lot
+*.log
+*.lof
+*.fls
+*.fdb_latexmk
+*.blg
+*.bbl
+*.aux
+
+generated/

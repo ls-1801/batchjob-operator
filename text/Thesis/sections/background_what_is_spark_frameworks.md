@@ -1,0 +1,1 @@
+This Section will give an Introduction to Distributed Big Data Processing and the Value of already Existing Big Data Frameworks like Spark and Flink

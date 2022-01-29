@@ -21,19 +21,49 @@
 
 % Body Matter (use input to add chapters)
 
-\input{tex/introduction.tex}
+\chapter{Introduction}
+\input{generated/introduction_overview.tex}
+\section{What is Big Data?}
+\input{generated/introduction_bigdata.tex}
+\section{Why is Scheduling Important}
+\input{generated/introduction_scheduling.tex}
 
-\input{tex/background.tex}
+\chapter{Background}
+\input{generated/background_overview.tex}
+\section{What is Spark Batch Frameworks?}
+\input{generated/background_what_is_spark_frameworks.tex}
+\section{What is Kubernetes?}
+\input{generated/background_what_is_kubernetes.tex}
 
-\input{tex/related_work.tex}
+\chapter{Related Work}
+\input{generated/related_work_overview.tex}
+\section{Scheduler}
+\input{generated/related_work_scheduler.tex}
+\section{Scheduler Frameworks}
+\input{generated/related_work_schedulerframeworks.tex}
 
-\input{tex/approach.tex}
+\chapter{Approach}
+\input{generated/approach_overview.tex}
+\section{Deep Dive: Batch-Job Operator}
+\input{generated/deepdive_operator.tex}
+\section{Deep Dive: Kubernetes Scheduler}
+\input{generated/deepdive_kubernetes_scheduler.tex}
+\section{Deep Dive: Extender}
+\input{generated/extender.tex}
 
-\input{tex/evaluation.tex}
+\chapter{Evaluation}
+\section{Does it Work?}
+\input{generated/evaluation_does_it_work.tex}
+\section{Comparision between different Apporoaches}
+\input{generated/evaluation_comparision.tex}
 
-\input{tex/open_questions.tex}
+\chapter{Open Questions}
+\input{generated/open_questions_overview.tex}
+\section{Future Work for the Operator}
+\input{generated/open_questions_future_work.tex}
 
-\input{tex/conclusion.tex}
+\chapter{Conclusion}
+\input{generated/conclusion.tex}
 
 
 % Back Matter (use input to add appendices, if really needed)
