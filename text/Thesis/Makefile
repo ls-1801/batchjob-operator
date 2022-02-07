@@ -1,8 +1,11 @@
-MDS=$(wildcard sections/*.md)
-TEXS=$(MDS:sections/%.md=generated/%.tex)
+MDS=$(wildcard md/*/*.md)
+TEXS=$(MDS:md/%.md=generated/%.tex)
 
-generated/%.tex: sections/%.md
+generated/%.tex: md/%.md
 	pandoc $^ -f markdown -t latex -s -o $@ 
+
+debug: 
+	echo $(TEXS)
 
 md: $(TEXS)
 

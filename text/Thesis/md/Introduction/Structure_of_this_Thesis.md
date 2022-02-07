@@ -1,0 +1,11 @@
+### TODO:
+- Thesis starts by giving a brief background to Big Data Streaming Processing, Cluster Management Systems (Kubernetes), and Scheduling
+- Discuss the Approach this thesis takes on tackling the Problem Description, by explaining how scheduling in Kubernetes works and what it takes to Extend Kubernetes (using the Operator Pattern)
+- Implementation Details that a worth mentioning: 
+   - An architectural Overview.
+   - The Process of designing an Interface 
+   - The Operator that is used to extend Kubernetes
+   - Changes that had to be made to existing Algorithms (and their tests)
+- How the work of thesis is evaluated, by testing it's functionality, comparing results from previous work and finally outlining its limitations
+- Comparing the Work that was done to current State of the Art Technology like the Batch Scheduling Framework Volcano and comparing to Scheduling approaches that are not available on Kubernetes
+- A final Conclusion, with a note on future work, that is missing from the current implementation or requires rethinking.

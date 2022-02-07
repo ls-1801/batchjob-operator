@@ -21,49 +21,63 @@
 
 % Body Matter (use input to add chapters)
 
+
 \chapter{Introduction}
-\input{generated/introduction_overview.tex}
-\section{What is Big Data?}
-\input{generated/introduction_bigdata.tex}
-\section{Why is Scheduling Important}
-\input{generated/introduction_scheduling.tex}
+\section{Motivation}
+\input{generated/Introduction/Motivation.tex}
+\section{Problem Description}
+\input{generated/Introduction/Problem_Description.tex}
+\section{Goal of this Thesis}
+\input{generated/Introduction/Goal_of_this_Thesis.tex}
+\section{Structure of this Thesis}
+\input{generated/Introduction/Structure_of_this_Thesis.tex}
+
 
 \chapter{Background}
-\input{generated/background_overview.tex}
-\section{What is Spark Batch Frameworks?}
-\input{generated/background_what_is_spark_frameworks.tex}
-\section{What is Kubernetes?}
-\input{generated/background_what_is_kubernetes.tex}
-
-\chapter{Related Work}
-\input{generated/related_work_overview.tex}
-\section{Scheduler}
-\input{generated/related_work_scheduler.tex}
-\section{Scheduler Frameworks}
-\input{generated/related_work_schedulerframeworks.tex}
+\section{Big Data Stream Processing}
+\input{generated/Background/Big_Data_Stream_Processing.tex}
+\section{Scheduling}
+\input{generated/Background/Scheduling.tex}
+\section{Cluster Management Systems}
+\input{generated/Background/Cluster_Management_Systems.tex}
 
 \chapter{Approach}
-\input{generated/approach_overview.tex}
-\section{Deep Dive: Batch-Job Operator}
-\input{generated/deepdive_operator.tex}
-\section{Deep Dive: Kubernetes Scheduler}
-\input{generated/deepdive_kubernetes_scheduler.tex}
-\section{Deep Dive: Extender}
-\input{generated/extender.tex}
+\section{Scheduling in Kubernetes}
+\input{generated/Approach/Scheduling_in_Kubernetes.tex}
+\section{Extending Kubernetes using the Operator Pattern}
+\input{generated/Approach/Extending_Kubernetes_using_the_Operator_Pattern.tex}
+
+\chapter{Implementation}
+\section{Architecture}
+\input{generated/Implementation/Architecture.tex}
+\section{Designing the Interface}
+\input{generated/Implementation/Designing_the_Interface.tex}
+\section{Operator}
+\input{generated/Implementation/Operator.tex}
+\section{Changes to existing Algorithm}
+\input{generated/Implementation/Changes_to_existing_Algorithm.tex}
 
 \chapter{Evaluation}
-\section{Does it Work?}
-\input{generated/evaluation_does_it_work.tex}
-\section{Comparision between different Apporoaches}
-\input{generated/evaluation_comparision.tex}
+\section{Testing}
+\input{generated/Evaluation/Testing.tex}
+\section{Comparing to baseline Runtime}
+\input{generated/Evaluation/Comparing_to_baseline_Runtime.tex}
+\section{Limitations}
+\input{generated/Evaluation/Limitations.tex}
+\section{Discussion}
+\input{generated/Evaluation/Discussion.tex}
 
-\chapter{Open Questions}
-\input{generated/open_questions_overview.tex}
-\section{Future Work for the Operator}
-\input{generated/open_questions_future_work.tex}
+\chapter{State of the Art}
+\section{Volcano}
+\input{generated/State_of_the_Art/Volcano.tex}
+\section{Non Kubernetes}
+\input{generated/State_of_the_Art/Non_Kubernetes.tex}
 
-\chapter{Conclusion}
-\input{generated/conclusion.tex}
+\chapter{Conclusion and Future Work}
+\section{Conclusion}
+\input{generated/State_of_the_Art/Conclusion.tex}
+\section{Future Work}
+\input{generated/State_of_the_Art/Future_Work.tex}
 
 
 % Back Matter (use input to add appendices, if really needed)

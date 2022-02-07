@@ -1,1 +1,0 @@
-This section should explain, what makes scheduling an important role in large scale data processing.

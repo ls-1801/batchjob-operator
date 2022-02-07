@@ -1,1 +1,0 @@
-This Section should show the comparison between the different approaches of extending the Kubernetes Scheduler and show the value of having a simplifying layer of abstraction above already existing kubernetes scheduler frameworks, by presenting the ease of use of an external already implemented scheduling algorithm like Mary.

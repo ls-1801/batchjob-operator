@@ -1,1 +1,0 @@
-Short section to give a brief overview into the topics of big data and scheduling before diving deeper.
