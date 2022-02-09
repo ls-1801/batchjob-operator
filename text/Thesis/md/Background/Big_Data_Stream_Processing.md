@@ -6,3 +6,8 @@
     - Explaining the DAG is required in order to later differentiate between DAG-level scheduling and "Pod"-Level scheduling
     - Driver and Executor Pods
 - Mention the use on Kubernetes using the Spark and Flink Operator
+
+
+### Input
+- mehr generisch 
+- unterschied stream/batch
