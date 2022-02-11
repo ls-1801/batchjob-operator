@@ -7,6 +7,7 @@ Already existing Scheduling Algorithms, like Mary and Hugo, were initially devel
 *(TODO: Explain why the Setup of Kubernetes has become easier: Cloud Providers, MiniKube)*
 
 Extending existing research to the more popular Resource Manager Kubernetes provides multiple benefits.
+
 1. Research on Scheduling Algorithms for YARN has become less valuable due to less usage
 2. The large ecosystem around Kubernetes allows for a better development environment due to debugging and diagnostic tooling
 3. Initial setup of a Kubernetes cluster has become smaller due to applications like MiniKube, which allows a quick setup of a cluster in the local machine and Cloud Providers offering Kubernetes Clusters as a service.
@@ -16,13 +17,14 @@ Extending existing research to the more popular Resource Manager Kubernetes prov
 The interface should provide easy access to the Kubernetes Cluster, allowing an external scheduler to place enqueued Batch-Jobs in predefined slots inside the cluster.
 
 For an external scheduler to form a scheduling decision, the interface should provide an overview of the current cluster situation containing:
+
 1. Information about empty or in use slots in the cluster
 2. Information about Jobs in the Queue
 3. Information about the history of reoccurring Jobs, like runtime
 
 It should be possible for an external scheduler to form a scheduling decision based on a queue of jobs and metrics collected from the cluster. The interface should accept the scheduling decision and translate it into Kubernetes concepts to establish the desired scheduling in the cluster.
 
-*(TODO: Explain shortcomings of Kubernetes)
+*(TODO: Explain shortcomings of Kubernetes)*
 
 Currently, the Kubernetes Cluster Resource Manager does not offer the concept of a Queue. Submitting jobs to the cluster would either allocate resources immediately or produce an error due to missing resources.
 
