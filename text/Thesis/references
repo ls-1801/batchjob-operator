@@ -1,0 +1,9 @@
+@book{book,
+author = {Blazewicz, Jacek and Ecker, Klaus and Pesch, Erwin and Schmidt, Guenter and Węglarz, Jan},
+year = {2001},
+month = {01},
+pages = {},
+title = {Scheduling Computer and Manufacturing Processes},
+isbn = {978-3-642-07545-2},
+doi = {10.1007/978-3-662-04363-9}
+}
