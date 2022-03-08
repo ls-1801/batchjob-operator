@@ -2,7 +2,7 @@ MDS=$(wildcard md/*/*.md)
 TEXS=$(MDS:md/%.md=generated/%.tex)
 
 generated/%.tex: md/%.md
-	pandoc $^ -f markdown -t latex -s -o $@ 
+	pandoc $^ -f markdown --natbib -t latex -s -o $@ 
 
 debug: 
 	echo $(TEXS)

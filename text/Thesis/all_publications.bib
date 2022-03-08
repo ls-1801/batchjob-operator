@@ -2,9 +2,51 @@
 % Encoding: Cp1252
 
 @inproceedings{da2015survey,
-  title={Survey on frameworks for distributed computing: Hadoop, spark and storm},
-  author={da Silva Morais, Telmo},
-  booktitle={Proceedings of the 10th Doctoral Symposium in Informatics Engineering-DSIE},
-  volume={15},
-  year={2015}
+  title     = {Survey on frameworks for distributed computing: Hadoop, spark and storm},
+  author    = {da Silva Morais, Telmo},
+  booktitle = {Proceedings of the 10th Doctoral Symposium in Informatics Engineering-DSIE},
+  volume    = {15},
+  year      = {2015}
+}
+
+@inproceedings{10.1145/2523616.2523633,
+  author    = {Vavilapalli, Vinod Kumar and Murthy, Arun C. and Douglas, Chris and Agarwal, Sharad and Konar, Mahadev and Evans, Robert and Graves, Thomas and Lowe, Jason and Shah, Hitesh and Seth, Siddharth and Saha, Bikas and Curino, Carlo and O'Malley, Owen and Radia, Sanjay and Reed, Benjamin and Baldeschwieler, Eric},
+  title     = {Apache Hadoop YARN: Yet Another Resource Negotiator},
+  year      = {2013},
+  isbn      = {9781450324281},
+  publisher = {Association for Computing Machinery},
+  address   = {New York, NY, USA},
+  url       = {https://doi.org/10.1145/2523616.2523633},
+  doi       = {10.1145/2523616.2523633},
+  abstract  = {The initial design of Apache Hadoop [1] was tightly focused on running massive, MapReduce jobs to process a web crawl. For increasingly diverse companies, Hadoop has become the data and computational agor\'{a}---the de facto place where data and computational resources are shared and accessed. This broad adoption and ubiquitous usage has stretched the initial design well beyond its intended target, exposing two key shortcomings: 1) tight coupling of a specific programming model with the resource management infrastructure, forcing developers to abuse the MapReduce programming model, and 2) centralized handling of jobs' control flow, which resulted in endless scalability concerns for the scheduler.In this paper, we summarize the design, development, and current state of deployment of the next generation of Hadoop's compute platform: YARN. The new architecture we introduced decouples the programming model from the resource management infrastructure, and delegates many scheduling functions (e.g., task fault-tolerance) to per-application components. We provide experimental evidence demonstrating the improvements we made, confirm improved efficiency by reporting the experience of running YARN on production environments (including 100% of Yahoo! grids), and confirm the flexibility claims by discussing the porting of several programming frameworks onto YARN viz. Dryad, Giraph, Hoya, Hadoop MapReduce, REEF, Spark, Storm, Tez.},
+  booktitle = {Proceedings of the 4th Annual Symposium on Cloud Computing},
+  articleno = {5},
+  numpages  = {16},
+  location  = {Santa Clara, California},
+  series    = {SOCC '13}
+}
+
+@inproceedings{hindman2011mesos,
+  title     = {Mesos: A Platform for $\{$Fine-Grained$\}$ Resource Sharing in the Data Center},
+  author    = {Hindman, Benjamin and Konwinski, Andy and Zaharia, Matei and Ghodsi, Ali and Joseph, Anthony D and Katz, Randy and Shenker, Scott and Stoica, Ion},
+  booktitle = {8th USENIX Symposium on Networked Systems Design and Implementation (NSDI 11)},
+  year      = {2011}
+}
+
+@inproceedings{1558641,
+  author    = {Capit, N. and Da Costa, G. and Georgiou, Y. and Huard, G. and Martin, C. and Mounie, G. and Neyron, P. and Richard, O.},
+  booktitle = {CCGrid 2005. IEEE International Symposium on Cluster Computing and the Grid, 2005.},
+  title     = {A batch scheduler with high level components},
+  year      = {2005},
+  volume    = {2},
+  number    = {},
+  pages     = {776-783 Vol. 2},
+  doi       = {10.1109/CCGRID.2005.1558641}
+}
+
+@inproceedings{zaharia2010spark,
+  title={Spark: Cluster computing with working sets},
+  author={Zaharia, Matei and Chowdhury, Mosharaf and Franklin, Michael J and Shenker, Scott and Stoica, Ion},
+  booktitle={2nd USENIX Workshop on Hot Topics in Cloud Computing (HotCloud 10)},
+  year={2010}
 }
