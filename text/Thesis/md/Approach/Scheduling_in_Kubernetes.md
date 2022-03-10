@@ -5,9 +5,6 @@ Containers in Pods also share storage and network resources across the container
 
 Usually, in Kubernetes, Pods are not created by themself but are managed by resources that build on top of them. Most commonly, Pods are used in Combination with Jobs, Deployments, or Statefulsets, which control the Lifecycle of the Pod.
 
-Resources like Jobs, Deployments, and Statefulsets describe Pods' desired state. Essentially Kubernetes has controllers that monitor both changes to the Resources Manifest and the current cluster situation. 
-The Control-Loop allows a Deployment consisting of a Pod template with a Replication-Factor to the exact amounts of pods running inside the cluster. If any of the Pods fails, the Deployment Controller creates a new one. But on the Flip-Side, the controller also knows when the Resources Manifest is updated. For example, if the container is updated to a more recent version, all containers need to be replaced with the newer version. Deployment Resources have many policies that dictate how these actions should happen. Usually, restarting all Pods at once would not be desired so that the deployment would allow for Rolling-Upgrades. The controller ensures that new Pods are created first and become ready before old Pods are deleted.
-
 The scheduling Problem in Kubernetes is the problem of deciding which pods are running on which node. For some pods, the question can be easily solved. For example, Pods that a DaemonSet controls are by the specification of the DaemonSet running on every node. Without further information, a feasible choice of scheduling pods onto nodes seems to be simple round-robin scheduling. Every Pod that requires scheduling gets scheduled onto the next nodes until all nodes have pods then the cycle is repeated. However, both pods and nodes can influence the scheduling. 
 
 
