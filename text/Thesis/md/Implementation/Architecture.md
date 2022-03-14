@@ -2,7 +2,7 @@ In this section, all components that make up the Interface are introduced. Here 
 
 The current implementation of the Scheduler Interface consists of 5 Components that will be introduced in this section but discussed in more detail in the Operator Section.
 
-![Components](graphics/architecture_components.png){width=50%, height=50%}
+![Components](graphics/architecture_components.png)
 
 The five components consist of three Reconciler or Control-Loops, the Batch-Job Reconciler, the Slots Reconciler, and the Scheduling Reconciler. The architecture also uses an Extender and, finally, the External-Scheduler facing Web-API.
 

@@ -12,3 +12,12 @@ Most of the time, Using just a new Controller is not enough to extend Kubernetes
 CustomResourceDefinitions (CRD) is the Kubernetes way of defining which *kind* of resources are allowed to exist in the cluster. Having multiple Controllers listing to the same Resource, like a Deployment, makes little sense or could even cause issues. Thus the Combination of a new Resource and a Controller that knows how to handle it creates the Operator Pattern. The term *Operator*is used as the controller is created to replace previously manual work of configuring Kubernetes Native Resources done by an Operator. A common use case for the Operator Pattern is to Control Applications at a Higher level, where previously Multiple Deployments and Services may have been required to operate a Database. The Operator Pattern could reduce that to just a single Manifest containing the meaningful configuration. Operators can thus be created by Experts operating the Software and be used by any Kubernetes Cluster.
 
 *(TODO: Best Practices when implementating an Operator)*
+
+## Custom Resource Definitions
+
+- Kubernetes resources are managed with a RESTful api, where Resources can be queried, created, updated and deleted
+- CRD creates a new RESTful resource path which is managed by the Kubernetes API server. 
+- Each version gets its on api
+- Resources can be namespaced or cluster-scoped
+- Custom resources, require a structural schema
+    - Non Empty types: (properties for Objects), (items for arrays)
