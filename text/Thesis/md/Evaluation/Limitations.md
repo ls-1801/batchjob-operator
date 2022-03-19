@@ -1,0 +1,3 @@
+- Error Reporting
+- Scalability concerns
+- 

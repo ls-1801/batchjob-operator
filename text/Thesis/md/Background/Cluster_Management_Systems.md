@@ -1,20 +1,14 @@
-- Abstraction for Systems with many machines
+In HPC Super Computers are commonly build with expansive hardwares, and tightly coupled Operating Systems, that allows parallel applications to take advantage of resources available on the super computer. Super Computers are carefully planned with software designed for specific purposes, this usually meant that multiple applications running on a super computers, would have resources statically partitioned among them. Coarse grain partitioning introduces inefficient use of hardware, once part of the statically partitioned resources are no longer in use.
 
-*(TODO: Super Computer/HPC)*
-- Super Computer with high-end hardware
-- Scale Work across multiple machines benefitting from cheap commodity hardware
-- Coarse Grain: Static partitioning of Machines across different workloads is enough
+![Static Partitioning](graphics/static_partitioning.png){width=25%, height=25%}
 
-*(What is MapReduce, maybe put into Big Data Stream Processing)*
+With the emerge of Distributed Dataflow Applications, like Hadoop MapReduce[@dittrich2012efficient] the need for a more fine grain partitioning of cluster resources came along. The move away from Super Computers to cheap commodity hardware, meant that cluster can be scaled up or down easily, where previously careful planning was required. Managing a dynamic system of potential thousands of nodes, can not be done in a manual fashion. A Cluster Resource Manager is required, to build the abstraction of a single cohesive cluster, that can be tasked with jobs.
 
-- Hadoop is one of Many Open-Source MapReduce implementations
-*(TODO: Frameworks)*
-Cluster computing using commodity hardware was driven by the need to keep up with the explosion of data.
-The Initial Version of Hadoop was focused on Running MapReduce Jobs to process a Web Crawl (*YARN Paper*). Despite the initial focus, Hadoop was widely adopted evolved to a state where it was no longer used with its initial target in mind. Wide adoptions have shown some of the weaknesses in Hadoops architecture:
+Hadoop is one of Many Open-Source MapReduce implementations. Cluster computing using commodity hardware was driven by the need to keep up with the explosion of data.
+The Initial Version of Hadoop was focused on Running MapReduce Jobs to process a Web Crawl [@10.1145/2523616.2523633]. Despite the initial focus, Hadoop was widely adopted evolved to a state where it was no longer used with its initial target in mind. Wide adoptions have shown some of the weaknesses in Hadoops architecture:
 - Tight Coupling between the MapReduce Programming model and Cluster Management
 - Centralized Handling of Jobs will prevent Hadoop from Scaling
 
-![Static Partitioning](graphics/static_partitioning.png){width=25%, height=25%}
 ![Dynamic Partitioning](graphics/dynamic_partitioning.png){width=25%, height=25%}
 
 The tight coupling leads Hadoop users with different applications to abuse the MapReduce Programming model to benefit from cluster management and be left with a suboptimal solution. A typical pattern was to submit 'map-only' jobs that act as arbitrary software running on top of the resource manager. [@10.1145/2523616.2523633]
@@ -36,76 +30,8 @@ Fine-grain partitioning can be achieved using containerization, where previously
 Before Hadoop 3 with YARN was published, an Alternative Cluster Manager Mesos was publicized. Like YARN, Mesos allowed a more fine granular sharing of resources using containerization.
 The key difference between YARN and Mesos is how resources are scheduled to frameworks running inside the cluster. YARN offers a resource request mechanism, where applications can request the resources they want to use (*TODO: fact check*), and Mesos, on the other hand, offers frameworks resources that they can use. This allows frameworks to decide better which of the resources may be more beneficial. This enables Mesos to pass the resource-intensive task of online scheduling to the frameworks and improve its scalability.
 
-
-*(TODO: Kubernetes)*
-Kubernetes was initially developed by Google and released after multiple years of intern usage. Kubernetes was quickly adopted and has become the defacto standard for managing a cluster of machines.
+Kubernetes[@burns2016borg] was initially developed by Google and released after multiple years of intern usage. Kubernetes was quickly adopted and has become the defacto standard for managing a cluster of machines.
 Kubernetes offers a descriptive way of managing resources in a cluster where manifests describing the cluster's desired state are stored inside a distributed key-value store etcd. Controllers are running inside the cluster to monitor these manifests and do the required actions to bring the cluster into the desired state. 
 Working with manifest abstracts away many of the problems that arise when deploying Applications to a cluster. Usually, an Operations Team was required to manage applications across the cluster. 
-With Kubernetes offering the required building blocks and the mechanism of a control-loop, the operator pattern in combination with Custom Resource Definitions is commonly used to extend Kubernetes functionalities.
+With Kubernetes offering the required building blocks and the mechanism of a control-loop, the operator pattern in combination with Custom Resource Definitions is commonly used to extend Kubernetes functionalities. Where Hadoop's YARN was focusing on Distributed Dataflow Applications, Kubernetes enables developers of all kind of Applications the scalability and resilience of the Cloud.
 
-
-### Notes (Ignore):
-- HPC Super Computer / Resources
-- Kubernetes Section is definitely not complete
-
-
-- Explain what a Cluster Resource Manager is doing
-    - Abstraction of using a single cluster as a single Machine
-    - Managing given resources making it scalable by adding more machines
-- Show what are the differences between YARN and Kubernetes
-    - YARN: Emerging from Hadoop was design to Work with Batch Applications
-    - Kubernetes: All Round Cluster Manager, with a Big Community
-
-*(TODO: Cloud Computing)*
-- Coarse Grain approach is no longer feasible
-- Applications may scale up or down, for and a partitioning of the cluster has to be done dynamically
-- Containerization, allows to run many different applications on the same machine without much overhead, like creating a new virtual machine
-- Different Applications may share same Node to increase overall utilizations of resources
-- Applications benefit from data locality, where creating application on a node that already contains the data, will not use additional I/O Resources
-- Different Applications are likely to work on the same data
-
-
-Mesos and Kubernetes
-- etcd vs ZooKeeper
-- Mesos Resource Offer leave scheduling to Framework
-- Kubernetes follows a descriptiv approach, where the user of the cluster describes a state that the cluster should be in and the resource manager
-exectues the required actions. This makes Kubernetes very extensible.
-- Kubernetes builds a virtual network across nodes
-- Kubernetes general purpose
-
-
-*YARN Paper*
-- Hadoop thightly focused on Web Crawling for Hadoop at Yahoo!
-- Broad Adoption streched intial focus
-- Thight Coupling of MapReduce Programming Model and Resource Manager
-- Centralized handling of Jobs control flow from the JobTracker
-
-- MapReduce Programming model was abused for other purposes then it was initially design
-- Common Pattern of Map-Only that was used for Forking?-Web-Services and Gang-Scheduled Computation. In general Developer came up with clever solutions to run all kinds of software on top of hadoop
-- Misuse and Broad adoption exposed many substantial issues with Hadoops archicture and implementation
-- YARN moves Hadoop pasts its original incarnation, by breaking up the monolithic architecture of Hadoop, splitting it into a Resource Manager from the programming model
-- YARN delegates many scheduling-related functions to per-job components
-- This makes MapReduce just one of many applications that can run on top of YARN
-- Allows for great choice of Programming Models using different Frameworks
-- Programming Frameworks running on top of YARN can manage their intra-application communication, execution flow and dynamic optimization by them self, unlock performance benefits
-
-### Historical
-- Yahoo! WebMap
-- Needs to be scalable 
-- Ad-hoc clusters
- - Initially user bring up a handful of nodes, load their data into HDFS, write a MapReduce job, then tear it down
- - Hadoop becomes more fault tolerant and persistent HDFS would become the norm
- - Operators just upload potential interesting data into the the HDFS, attracting analysts. --> Mulit-Tenancy of HDFS
- - To address Multi Tenancy HoD was deployed, using Torque and Maui to allocate Hadoop Cluster on a shared pool of Hardware
- - User submit Job, with required amount of rescoures to torque, which then waits until enough resources are avaible
- - Torque would start the Hadoop Leader, which then interacts with Torque and Maui to create the Hadoop Slaves, which will then Spawn the TaskTracker + JobTracker
- - Job Tracker would then accept a series of Jobs
- - User can then release the Cluster. The System will then return logs to the user and return nodes to the cluster
- - HoD allows slightly older version of Hadoop to be used
-- HoD shortcomming:
- - Torque did not account for data locality
- - Bad resource utilization, last task of job may block hundreds of machines, Cluster were not resized between jobs, Users usually overestimate the number of nodes required
-- Shared Cluster
- - Resource Granularity was to coarse 
- - JobTracker does not scale as HDFS, JobTracker failure was a complete failure of all jobs
- - 
