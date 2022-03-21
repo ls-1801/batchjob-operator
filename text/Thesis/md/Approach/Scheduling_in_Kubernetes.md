@@ -7,7 +7,6 @@ Usually, in Kubernetes, Pods are not created by themself but are managed by reso
 
 The scheduling Problem in Kubernetes is the problem of deciding which pods are running on which node. For some pods, the question can be easily solved. For example, Pods that a DaemonSet controls are by the specification of the DaemonSet running on every node. Without further information, a feasible choice of scheduling pods onto nodes seems to be simple round-robin scheduling. Every Pod that requires scheduling gets scheduled onto the next nodes until all nodes have pods then the cycle is repeated. However, both pods and nodes can influence the scheduling. 
 
-
 Pods can specify the resources they are going to use and may even set a Hard Requirement in the form of a request for resources they require to run. Scheduling needs to take the resources requests into account when scheduling a pod across nodes. Pods can also directly influence the node they should be scheduled on, either through specifying a *nodeName* directly, a *nodeSelector*, which identifies possible multiple nodes, or a more general concept of *affinity*. 
 Affinities provide the ability to set Hard and Soft Requirements, where a Pod may become unschedulable if a Hard Requirement cannot be met, and a Soft requirement is not preferred but an acceptable decision. With Affinities, even inter-pod affinities can be specified where pods can choose not to be scheduled on a node where another pod is already deployed. 
 

@@ -45,135 +45,161 @@
 }
 
 @inproceedings{zaharia2010spark,
-  title={Spark: Cluster computing with working sets},
-  author={Zaharia, Matei and Chowdhury, Mosharaf and Franklin, Michael J and Shenker, Scott and Stoica, Ion},
-  booktitle={2nd USENIX Workshop on Hot Topics in Cloud Computing (HotCloud 10)},
-  year={2010}
+  title     = {Spark: Cluster computing with working sets},
+  author    = {Zaharia, Matei and Chowdhury, Mosharaf and Franklin, Michael J and Shenker, Scott and Stoica, Ion},
+  booktitle = {2nd USENIX Workshop on Hot Topics in Cloud Computing (HotCloud 10)},
+  year      = {2010}
 }
 
 @misc{kubernetesPodDocs,
-  title = {{kubernets.io} Concepts/Pods},
+  title        = {{kubernets.io} Concepts/Pods},
   howpublished = {\url{https://kubernetes.io/docs/concepts/workloads/pods/}},
-  note = {Accessed: 2022-03-09}
+  note         = {Accessed: 2022-03-09}
+}
+
+
+@misc{kubernetesStatefulSetsDocs,
+  title        = {{kubernets.io} Concepts/StatefulSets},
+  howpublished = {\url{https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/}},
+  note         = {Accessed: 2022-03-21}
+}
+
+@misc{kubernetesDeploymentsDocs,
+  title        = {{kubernets.io} Concepts/Deployments},
+  howpublished = {\url{https://kubernetes.io/docs/concepts/workloads/controllers/deployment/}},
+  note         = {Accessed: 2022-03-21}
 }
 
 
 @misc{rbacProxy,
-  title = {{github.com} brancz/kube-rbac-proxy},
+  title        = {{github.com} brancz/kube-rbac-proxy},
   howpublished = {\url{https://github.com/brancz/kube-rbac-proxy}},
-  note = {Accessed: 2022-03-09}
+  note         = {Accessed: 2022-03-09}
 }
 
 @misc{kubernetesSchedulerDocs,
   author       = {},
   howpublished = {\url{https://kubernetes.io/docs/concepts/scheduling-eviction/kube-scheduler/}},
-  title = {{kubernets.io} Concepts/Pods},
-  note = {Accessed: 2022-03-09}
+  title        = {{kubernets.io} Concepts/Scheduler},
+  note         = {Accessed: 2022-03-09}
 }
 
 @misc{hpcWikiScheduling,
   author       = {},
   howpublished = {\url{https://hpc-wiki.info/hpc/Scheduling_Basics}},
-  title = {{hpc-wiki.info} Scheduling Basics},
-  note = {Accessed: 2022-03-09}
+  title        = {{hpc-wiki.info} Scheduling Basics},
+  note         = {Accessed: 2022-03-09}
 }
 
 @misc{SparkOperator,
   author       = {},
   howpublished = {\url{https://github.com/GoogleCloudPlatform/spark-on-k8s-operator}},
-  title = {{GitHub.com} GCP/Spark-On-K8s-Operator},
-  note = {Accessed: 2022-03-10}
+  title        = {{GitHub.com} GCP/Spark-On-K8s-Operator},
+  note         = {Accessed: 2022-03-10}
 }
 
 @misc{FlinkOperator,
   author       = {},
   howpublished = {\url{https://github.com/spotify/flink-on-k8s-operator}},
-  title = {{GitHub.com} Spotify/Flink-On-K8s-Operator},
-  note = {Accessed: 2022-03-10}
+  title        = {{GitHub.com} Spotify/Flink-On-K8s-Operator},
+  note         = {Accessed: 2022-03-10}
 }
 
 @misc{DataBricks,
   author       = {},
   howpublished = {\url{https://databricks.com/blog/2014/03/20/apache-spark-a-delight-for-developers.html}},
-  title = {{databricks.com} Blog Apache Spark: A Delight for Developers},
-  note = {Accessed: 2022-03-17}
+  title        = {{databricks.com} Blog Apache Spark: A Delight for Developers},
+  note         = {Accessed: 2022-03-17}
 }
 
 @article{dean2008mapreduce,
-  title={MapReduce: simplified data processing on large clusters},
-  author={Dean, Jeffrey and Ghemawat, Sanjay},
-  journal={Communications of the ACM},
-  volume={51},
-  number={1},
-  pages={107--113},
-  year={2008},
-  publisher={ACM New York, NY, USA}
+  title     = {MapReduce: simplified data processing on large clusters},
+  author    = {Dean, Jeffrey and Ghemawat, Sanjay},
+  journal   = {Communications of the ACM},
+  volume    = {51},
+  number    = {1},
+  pages     = {107--113},
+  year      = {2008},
+  publisher = {ACM New York, NY, USA}
 }
 
 
 
 
-@InProceedings{10.1007/978-3-030-96498-6_18,
-author="Misale, Claudia
-and Milroy, Daniel J.
-and Gutierrez, Carlos Eduardo Arango
-and Drocco, Maurizio
-and Herbein, Stephen
-and Ahn, Dong H.
-and Kaiser, Zvonko
-and Park, Yoonho",
-editor="Nichols, Jeffrey
-and Maccabe, Arthur `Barney'
-and Nutaro, James
-and Pophale, Swaroop
-and Devineni, Pravallika
-and Ahearn, Theresa
-and Verastegui, Becky",
-title="Towards Standard Kubernetes Scheduling Interfaces for Converged Computing",
-booktitle="Driving Scientific and Engineering Discoveries Through the Integration of Experiment, Big Data, and Modeling and Simulation",
-year="2022",
-publisher="Springer International Publishing",
-address="Cham",
-pages="310--326",
-abstract="High performance computing (HPC) and cloud technologies are increasingly coupled to accelerate the convergence of traditional HPC with new simulation, data analysis, machine-learning, and artificial intelligence approaches. While the HPC+cloud paradigm, or converged computing, is ushering in new scientific discoveries with unprecedented levels of workflow automation, several key mismatches between HPC and cloud technologies still preclude this paradigm from realizing its full potential. In this paper, we present a joint effort between IBM Research, Lawrence Livermore National Laboratory (LLNL), and Red Hat to address the mismatches and to bring full HPC scheduling awareness into Kubernetes, the de facto container orchestrator for cloud-native applications, which is being increasingly adopted as a key converged-computing enabler. We found Kubernetes lacking of interfaces to enable the full spectrum of converged-computing use cases in the following three areas: (A) an interface to enable HPC batch-job scheduling (e.g., locality-aware node selection), (B) an interface to enable HPC workloads or task-level scheduling, and (C) a resource co-management interface to allow HPC resource managers and Kubernetes to co-manage a resource set. We detail our methodology and present our results, whereby the advanced graph-based scheduler Fluxion -- part of the open-source Flux scheduling framework -- is integrated as a Kubernetes scheduler plug-in, KubeFlux. Our initial performance study shows that KubeFlux exhibits similar performance (up to measurement precision) to the default scheduler, despite KubeFlux's considerably more sophisticated scheduling capabilities.",
-isbn="978-3-030-96498-6"
+@inproceedings{10.1007/978-3-030-96498-6_18,
+  author    = {Misale, Claudia
+               and Milroy, Daniel J.
+               and Gutierrez, Carlos Eduardo Arango
+               and Drocco, Maurizio
+               and Herbein, Stephen
+               and Ahn, Dong H.
+               and Kaiser, Zvonko
+               and Park, Yoonho},
+  editor    = {Nichols, Jeffrey
+               and Maccabe, Arthur `Barney'
+               and Nutaro, James
+               and Pophale, Swaroop
+               and Devineni, Pravallika
+               and Ahearn, Theresa
+               and Verastegui, Becky},
+  title     = {Towards Standard Kubernetes Scheduling Interfaces for Converged Computing},
+  booktitle = {Driving Scientific and Engineering Discoveries Through the Integration of Experiment, Big Data, and Modeling and Simulation},
+  year      = {2022},
+  publisher = {Springer International Publishing},
+  address   = {Cham},
+  pages     = {310--326},
+  abstract  = {High performance computing (HPC) and cloud technologies are increasingly coupled to accelerate the convergence of traditional HPC with new simulation, data analysis, machine-learning, and artificial intelligence approaches. While the HPC+cloud paradigm, or converged computing, is ushering in new scientific discoveries with unprecedented levels of workflow automation, several key mismatches between HPC and cloud technologies still preclude this paradigm from realizing its full potential. In this paper, we present a joint effort between IBM Research, Lawrence Livermore National Laboratory (LLNL), and Red Hat to address the mismatches and to bring full HPC scheduling awareness into Kubernetes, the de facto container orchestrator for cloud-native applications, which is being increasingly adopted as a key converged-computing enabler. We found Kubernetes lacking of interfaces to enable the full spectrum of converged-computing use cases in the following three areas: (A) an interface to enable HPC batch-job scheduling (e.g., locality-aware node selection), (B) an interface to enable HPC workloads or task-level scheduling, and (C) a resource co-management interface to allow HPC resource managers and Kubernetes to co-manage a resource set. We detail our methodology and present our results, whereby the advanced graph-based scheduler Fluxion -- part of the open-source Flux scheduling framework -- is integrated as a Kubernetes scheduler plug-in, KubeFlux. Our initial performance study shows that KubeFlux exhibits similar performance (up to measurement precision) to the default scheduler, despite KubeFlux's considerably more sophisticated scheduling capabilities.},
+  isbn      = {978-3-030-96498-6}
 }
 
 
 @inproceedings{FluxPoster,
-author = {Stephen Herbein, Tapasya Patki, Dong H. Ahn, Don Lipari, Tamara Dahlgren, David Domyancic, Michela Taufer},
-title= {Fully Hierarchical Scheduling: Paving the Way to Exascale Workloads},
-booktitle= {International Conference for High Performance Computing, Networking, Storage and Analysis, Denver, CO},
-year= {2017}
+  author    = {Stephen Herbein, Tapasya Patki, Dong H. Ahn, Don Lipari, Tamara Dahlgren, David Domyancic, Michela Taufer},
+  title     = {Fully Hierarchical Scheduling: Paving the Way to Exascale Workloads},
+  booktitle = {International Conference for High Performance Computing, Networking, Storage and Analysis, Denver, CO},
+  year      = {2017}
 }
 
 @article{dittrich2012efficient,
-  title={Efficient big data processing in Hadoop MapReduce},
-  author={Dittrich, Jens and Quian{\'e}-Ruiz, Jorge-Arnulfo},
-  journal={Proceedings of the VLDB Endowment},
-  volume={5},
-  number={12},
-  pages={2014--2015},
-  year={2012},
-  publisher={VLDB Endowment}
+  title     = {Efficient big data processing in Hadoop MapReduce},
+  author    = {Dittrich, Jens and Quian{\'e}-Ruiz, Jorge-Arnulfo},
+  journal   = {Proceedings of the VLDB Endowment},
+  volume    = {5},
+  number    = {12},
+  pages     = {2014--2015},
+  year      = {2012},
+  publisher = {VLDB Endowment}
 }
 
 @article{burns2016borg,
-  title={Borg, omega, and kubernetes},
-  author={Burns, Brendan and Grant, Brian and Oppenheimer, David and Brewer, Eric and Wilkes, John},
-  journal={Communications of the ACM},
-  volume={59},
-  number={5},
-  pages={50--57},
-  year={2016},
-  publisher={ACM New York, NY, USA}
+  title     = {Borg, omega, and kubernetes},
+  author    = {Burns, Brendan and Grant, Brian and Oppenheimer, David and Brewer, Eric and Wilkes, John},
+  journal   = {Communications of the ACM},
+  volume    = {59},
+  number    = {5},
+  pages     = {50--57},
+  year      = {2016},
+  publisher = {ACM New York, NY, USA}
 }
 @article{borthakur2008hdfs,
-  title={HDFS architecture guide},
-  author={Borthakur, Dhruba and others},
-  journal={Hadoop apache project},
-  volume={53},
-  number={1-13},
-  pages={2},
-  year={2008}
+  title   = {HDFS architecture guide},
+  author  = {Borthakur, Dhruba and others},
+  journal = {Hadoop apache project},
+  volume  = {53},
+  number  = {1-13},
+  pages   = {2},
+  year    = {2008}
 }
+
+@misc{Stomp,
+  howpublished = {\url{https://stomp.github.io/}},
+  title        = {The Simple Text Oriented Messaging Protocol},
+  note         = {Accessed: 2022-03-21}
+}
+
+@misc{OperatorSdkBestPractice,
+  howpublished = {\url{https://sdk.operatorframework.io/docs/best-practices/best-practices/}},
+  title        = {Operator Best Practices},
+  note         = {Accessed: 2022-03-21}
+}
+
