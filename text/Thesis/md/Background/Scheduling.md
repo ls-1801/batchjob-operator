@@ -34,7 +34,7 @@ While some of these factors can be controlled, different algorithms can be chose
 
 In Distributed Dataflow Applications, we deal with considerable different levels of scheduling. At the Framework level, applications build a DAG-based execution plan based on the job submitted. The initial DAG breaks done the job into their respective Map and Reduce Operations. These Operations will be broken down further into smaller Tasks based on the Partitioning of Data. Finally, Tasks are executed on an arbitrary number of processes across different machines. Optimizing the schedule of tasks to an executor process will be called DAG-Level scheduling and may now also include factors like Data-Locality.
 
-Moving Up one Level Higher in the stack, we are concerned with running multiple Jobs inside the same cluster, and a decision needs to be made which job can spawn their executor on which nodes. Executors are packaged on Containers. The containers are isolated so that they can not access each other.
+Moving Up one Level Higher in the stack, we are concerned with running multiple Jobs inside the same cluster, and a decision needs to be made which job can spawn their executor on which Nodes. Executors are packaged on Containers. The containers are isolated so that they can not access each other.
 
 A more profound introduction into the specifics of scheduling in Kubernetes is inside the Scheduling in Kubernetes chapter.
 

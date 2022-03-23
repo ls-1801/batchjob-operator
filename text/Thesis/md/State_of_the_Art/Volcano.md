@@ -1,5 +1,5 @@
 Volcano is a System Batch-Job Scheduler made for High-Performance Workloads on Kubernetes. Volcano extends Kubernetes with functionalities that Kubernetes do not natively support. Some of these functionalities are critical when working with High-Performance Workloads, like “PodGroups”.
-In a scenario where a Framework might want to create multiple pods for its computation, the resources inside the cluster only allow for a few of them to be deployed. Applications could encounter deadlocks, requiring more pods to be deployed to progress.
+In a scenario where a Framework might want to create multiple Pods for its computation, the resources inside the cluster only allow for a few of them to be deployed. Applications could encounter deadlocks, requiring more Pods to be deployed to progress.
 The Concept of PodGroups prevents Pods from being scheduled unless all of them can be scheduled.
 
 The Volcano scheduler is based on the Kubernetes Scheduling Framework, influencing the scheduling cycle at the extension points. 

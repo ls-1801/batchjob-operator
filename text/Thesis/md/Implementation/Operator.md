@@ -26,21 +26,21 @@ After a Batch Job was requested to create the application, application-specific 
 
 When creating the application, the following aspects are configured for the Executor/TaskManager Pods:
 
-- **Resource Requests**: The Container resources are specified by the Testbeds slot size. For the pods to fit inside a slot, they need the correct Resource Request. (Currently only CPU and Memory)
+- **Resource Requests**: The Container resources are specified by the Testbeds slot size. For the Pods to fit inside a slot, they need the correct Resource Request. (Currently only CPU and Memory)
 
-- **Slot IDs**: The Scheduling (or the external scheduler) decides which slots are used by which Job. For the Executor/TaskManager Pods to be placed into the correct slot (technically the correct node), Pods need to be made identifiable by the Scheduler Extender.
+- **Slot IDs**: The Scheduling (or the External-Scheduler) decides which slots are used by which Job. For the Executor/TaskManager Pods to be placed into the correct slot (technically the correct Node), Pods need to be made identifiable by the Scheduler Extender.
 
 - **replication**: The Number of Executor/TaskManager Pods depends on the Number of Slots that will be used for the application.
 
-- **Priority Class**: Application pods need a *PriorityClass* otherwise, preemption will not be triggered by the Kubernetes Scheduler.
+- **Priority Class**: Application Pods need a *PriorityClass* otherwise, preemption will not be triggered by the Kubernetes Scheduler.
 
-- **Scheduler Name**: Application pods need a *SchedulerName* otherwise, the default KubeScheduler will handle the Scheduling and thus ignore the Scheduling Extender.
+- **Scheduler Name**: Application Pods need a *SchedulerName* otherwise, the default KubeScheduler will handle the Scheduling and thus ignore the Scheduling Extender.
 
-Configuration of **Resource Requests**, **Replication** is straightforward, as both the Spark and Flink Operator expose these via their respective CRDs. The Spark Operator actually exposes the complete PodSpec for both driver and executor pods, whereas the Flink Operator only exposes a few PodSpec attributes. The Flink Operator had to be extended with the missing configurations. This way **Resource Requests**, **Replication**, **Priority Class**, **Scheduler Name** are configured.
+Configuration of **Resource Requests**, **Replication** is straightforward, as both the Spark and Flink Operator expose these via their respective CRDs. The Spark Operator actually exposes the complete PodSpec for both driver and executor Pods, whereas the Flink Operator only exposes a few PodSpec attributes. The Flink Operator had to be extended with the missing configurations. This way **Resource Requests**, **Replication**, **Priority Class**, **Scheduler Name** are configured.
 
-The difference between any of the mentioned above configurations and the **Slot IDs** is that the Application Operators only allow (rightfully so) to specify a single pod spec. This is because the Executor/TaskManager Pods are controlled by a Stateful Set, which scales up to the desired replication. However, the configurations mentioned above are valid for all pods, but *Slot IDs* need to be different.
+The difference between any of the mentioned above configurations and the **Slot IDs** is that the Application Operators only allow (rightfully so) to specify a single Pod spec. This is because the Executor/TaskManager Pods are controlled by a Stateful Set, which scales up to the desired replication. However, the configurations mentioned above are valid for all Pods, but *Slot IDs* need to be different.
 
-This issue can be circumvented by leaving the final decision of which pod goes into which slot to the Extender—submitting only a list of all SlotIDs to the Extender. The Extender needs to decide which pod goes into which slot. Pods are configured with an affinity of the combined set of nodes where the slots reside on.
+This issue can be circumvented by leaving the final decision of which Pod goes into which slot to the Extender—submitting only a list of all SlotIDs to the Extender. The Extender needs to decide which Pod goes into which slot. Pods are configured with an affinity of the combined set of Nodes where the slots reside on.
 
 ![Affinities](graphics/affinity.png){height=25%}
 
@@ -54,17 +54,17 @@ The *TestBed* Operator comprises the Reconciler Loop and the *TestBeds* CRD. The
 
 - **Reserve Resources** by using so-called Ghost Pods inside the cluster that specify a resource request and thus reserve the resources
 
-- **Preempt** Ghost Pods for pods that wants to be deployed inside a slot
+- **Preempt** Ghost Pods for Pods that wants to be deployed inside a slot
 
-The TestBed Reconciler listens to changes to the TestBed CR and the current cluster situation. It ensures that the correct number of pods with the specified resource requests are always deployed onto the cluster. The TestBed CR is composed of the following configurations:
+The TestBed Reconciler listens to changes to the TestBed CR and the current cluster situation. It ensures that the correct number of Pods with the specified resource requests are always deployed onto the cluster. The TestBed CR is composed of the following configurations:
 
-- Label Name to Identify any nodes that are part of the TestBed. Only the Label Name is specified, not a specific value. The value is later used to create a distinct order of slots in the cluster.
+- Label Name to Identify any Nodes that are part of the TestBed. Only the Label Name is specified, not a specific value. The value is later used to create a distinct order of slots in the cluster.
 
-- Number of slots per node
+- Number of slots per Node
 
 - Resource Request per slot
 
-Given the Testbeds specification, the Reconciler listens for all changes to nodes **with** the specified label. It also needs to listen for nodes **without** any label if the label was removed and the Testbed needs to be resized. Further, it also listens to changes to any pod part of the Test Bed.
+Given the Testbeds specification, the Reconciler listens for all changes to Nodes **with** the specified label. It also needs to listen for Nodes **without** any label if the label was removed and the Testbed needs to be resized. Further, it also listens to changes to any Pod part of the Test Bed.
 
 The typical Reconciliation Loop works as follows:
 
@@ -75,9 +75,9 @@ The typical Reconciliation Loop works as follows:
 - Find the difference. Either delete undesired Pods or create desired Pods
 
 
-Fetch the current cluster situation by fetching all pods with the **SLOT** label. Pods are then grouped by their node, thus creating a list of pods per node. The desired state is calculated by modeling pods for every slot and grouping them by nodes. When comparing pods, we consider them equal if they reside on the same node, have the same resource request, and have the same *SlotPositionOnNode*.
+Fetch the current cluster situation by fetching all Pods with the **SLOT** label. Pods are then grouped by their Node, thus creating a list of Pods per Node. The desired state is calculated by modeling Pods for every slot and grouping them by Nodes. When comparing Pods, we consider them equal if they reside on the same Node, have the same resource request, and have the same *SlotPositionOnNode*.
 
-**Note**: The position of slots on a Node does not matter because slots on are node are only a logical abstraction.
+**Note**: The position of slots on a Node does not matter because slots on are Node are only a logical abstraction.
 
 ![](graphics/TestBed-ObservedAndDesired.pdf){width=60%}
 ![](graphics/TestBed-ObservedAndDesired(2).pdf){width=40%}
@@ -106,13 +106,13 @@ Fetch the current cluster situation by fetching all pods with the **SLOT** label
 \caption{TestBed Observed and Desired}
 \end{figure}
 
-The Reconciler now builds a set of observed pods and a set of desired pods. \ref{SlotsNewPods} shows an example scenario where the control-loop realizes that pods from the desired state are not in the current state, thus creating the missing pods in the *desired and not existing* set. In a different scenario displayed by \ref{SlotsNodeChange} the label on a node was removed, thus reducing the number of slots inside the Testbed. Pods that are in the *existing and not desired* set will be removed. The final set is the *desired and existing* set, which contains pods that already have the correct resources requirement and are placed on the correct node.
+The Reconciler now builds a set of observed Pods and a set of desired Pods. \ref{SlotsNewPods} shows an example scenario where the control-loop realizes that Pods from the desired state are not in the current state, thus creating the missing Pods in the *desired and not existing* set. In a different scenario displayed by \ref{SlotsNodeChange} the label on a Node was removed, thus reducing the number of slots inside the Testbed. Pods that are in the *existing and not desired* set will be removed. The final set is the *desired and existing* set, which contains Pods that already have the correct resources requirement and are placed on the correct Node.
 
 Currently, the SlotOccupationStatus holds the following information: 
 
-- **NodeID** and **NodeName**: which is derived from the Test-Bed Selector Label on the node
+- **NodeID** and **NodeName**: which is derived from the Test-Bed Selector Label on the Node
 - **Position**: which is the SlotID, 
-- **slotPositionOnNode**: where the position does unique among the whole Test Bed, SlotPosition on node is only unique per node
+- **slotPositionOnNode**: where the position does unique among the whole Test Bed, SlotPosition on Node is only unique per Node
 - **PodName** and **PodUID**: The Name and the Unique Identifier of a Pod that is currently residing inside the slot
 - **state**: is the current state of the slot, which can either be *free*, *reserved*, or *occupied*
 
@@ -122,31 +122,31 @@ Currently, the SlotOccupationStatus holds the following information:
 ![Components under control of the External-Interface System\label{ComponentsInControl}](graphics/extender_function.pdf)
 
 Extender Component is integrated within the TestBed Reconciler. Suppose the reconciliation loop detects that the cluster is in progress. The loop is aborted to prevent changes from the Testbed Reconciler and the Extender to act concurrently on the TestBed CR. 
-Currently, a cluster is considered in progress if any of the pods require Scheduling (.spec.nodeName is not set) or are terminating (deletion timestamp is set). 
+Currently, a cluster is considered in progress if any of the Pods require Scheduling (.spec.NodeName is not set) or are terminating (deletion timestamp is set). 
 
-The Extender is the component that directly interacts with the Kubernetes Scheduler. An additional scheduler, with an additional scheduling profile, is running concurrently to the default Kube-Scheduler. The custom scheduler (which will be referred to as Kube-Scheduler) is configured to use the Extender. To guarantee the Scheduling of pods onto the TestBeds slots, the Extender extends the Filter and Preemption extension points of the Kubernetes scheduling cycle. The main problem the Extender can solve, is that the BatchJob Operator does not have full control of pods created downstream by the Applications Operator. 
+The Extender is the component that directly interacts with the Kubernetes Scheduler. An additional scheduler, with an additional scheduling profile, is running concurrently to the default Kube-Scheduler. The custom scheduler (which will be referred to as Kube-Scheduler) is configured to use the Extender. To guarantee the Scheduling of Pods onto the TestBeds slots, the Extender extends the Filter and Preemption extension points of the Kubernetes scheduling cycle. The main problem the Extender can solve, is that the Batch Job Operator does not have full control of Pods created downstream by the Applications Operator. 
 
-\ref{ComponentsInControl} shows which of the Components and Resource Managed by them are under the control of the External-Interfaces System. The BatchJob Operator can only control the Application CR created. The Application CR only describes a single PodSpec, which will be later be replicated into multiple pods by the Replication Controller, which is part of the StatefulSet. Thus it is not possible to set Pod specific configurations, like the SlotID, at the BatchJob Operator Level. However all Pods can be configured, with enough information, for the Extender to figure out which pod belongs in which slot.
+\ref{ComponentsInControl} shows which of the Components and Resource Managed by them are under the control of the External-Interfaces System. The Batch Job Operator can only control the Application CR created. The Application CR only describes a single PodSpec, which will be later be replicated into multiple Pods by the Replication Controller, which is part of the StatefulSet. Thus it is not possible to set Pod specific configurations, like the SlotID, at the Batch Job Operator Level. However all Pods can be configured, with enough information, for the Extender to figure out which Pod belongs in which slot.
 
 **Note**: PodSpec here only refers to the TaskManager/Executor PodSpec, as the External-Interface does not handle Scheduling of the JobManager/Driver Pods.
 
-In order to influence the scheduler to schedule pods onto nodes with the correct slot, the number of possible nodes is first limited by all nodes containing any of the slots using affinities.
+In order to influence the scheduler to schedule Pods onto Nodes with the correct slot, the number of possible Nodes is first limited by all Nodes containing any of the slots using affinities.
 
-The Applications PodSpec created by the BatchJob Operator, limits the possible nodes, the kube-scheduler can use affinities. During development multiple scenarios, of interaction between kube-scheduler and Extender were identified. 
+The Applications PodSpec created by the Batch Job Operator, limits the possible Nodes, the kube-scheduler can use affinities. During development multiple scenarios, of interaction between kube-scheduler and Extender were identified. 
 
-![Kube-Scheduler limits nodes, Extender selects node with slot\label{ExtenderFiltering}](graphics/ExtenderFiltering.pdf){height=50%}
+![Kube-Scheduler limits Nodes, Extender selects Node with slot\label{ExtenderFiltering}](graphics/ExtenderFiltering.pdf){height=50%}
 
-If the kube-scheduler, detects not enough available resources, it will trigger preemption. If no preemption is required the Filter endpoint of the Extender is queried, to further limit the possible nodes. \ref{ExtenderFiltering} describes how the set of possible nodes is first shrunk by affinities and later the correct node is chosen by the Extender, based on the first free slot. Once a pod invokes the Extender a slot will be reserved. The Extender Stores Information inside the TestBed CRs Status. To prevent race conditions between the TestBed Reconciler and the Extender mutual access to the TestBed CR, is required, which is guaranteed since the TestBed Reconciler will abort its reconciliation if Scheduling is in progress.
+If the kube-scheduler, detects not enough available resources, it will trigger preemption. If no preemption is required the Filter endpoint of the Extender is queried, to further limit the possible Nodes. \ref{ExtenderFiltering} describes how the set of possible Nodes is first shrunk by affinities and later the correct Node is chosen by the Extender, based on the first free slot. Once a Pod invokes the Extender a slot will be reserved. The Extender Stores Information inside the TestBed CRs Status. To prevent race conditions between the TestBed Reconciler and the Extender mutual access to the TestBed CR, is required, which is guaranteed since the TestBed Reconciler will abort its reconciliation if Scheduling is in progress.
 
-In the Event no resources are available the kube-scheduler invokes the preemption endpoint of the Extender. Preemption is straightforward, since the TestBed already reserves resources using ghost pods. The Extender chooses a slot based on the first free slot, and returns the currently residing ghost pod to be the victim.
+In the Event no resources are available the kube-scheduler invokes the preemption endpoint of the Extender. Preemption is straightforward, since the TestBed already reserves resources using ghost Pods. The Extender chooses a slot based on the first free slot, and returns the currently residing ghost Pod to be the victim.
 
-For the TestBed Reconciler to detect scheduled pods the Extender will in addition to returning the target node to the scheduler, also sets the **SlotID** + **NonGhostPod** of scheduled pods. Once Scheduling has finished, the TestBed Reconciler will no longer abort execution, and preempt all ghost pods, that were not previously preempted by the Kube-Scheduler. Further Information about the Extender can be found inside the source code, as it contains heavily commented code, to describe different scenarios.
+For the TestBed Reconciler to detect scheduled Pods the Extender will in addition to returning the target Node to the scheduler, also sets the **SlotID** + **NonGhostPod** of scheduled Pods. Once Scheduling has finished, the TestBed Reconciler will no longer abort execution, and preempt all ghost Pods, that were not previously preempted by the Kube-Scheduler. Further Information about the Extender can be found inside the source code, as it contains heavily commented code, to describe different scenarios.
 
 ## Scheduling Operator
-Once again the Scheduling Operator is composed of the Reconciler Loop and the Scheduling CRD. The Scheduling Reconciler like the BatchJob Reconciler implemented using a nested Statemachine. 
-The Scheduling CR models, a collection of jobs, and a slot selection strategy. Once submitted the Reconciler first acquires all jobs, and starts running them. The Scheduling tracks the execution of all its jobs and submits new Jobs once old jobs have finished and slots become available again. Initially the Scheduling was planned to only support offline Scheduling, where an external scheduler plans the execution of multiple jobs in advance, however in theory updating the Scheduling spec would allow an online scheduling, but in the current state it is rather unreliable, as it only allows jobs to be added to the end of the queue.
+Once again the Scheduling Operator is composed of the Reconciler Loop and the Scheduling CRD. The Scheduling Reconciler like the Batch Job Reconciler implemented using a nested Statemachine. 
+The Scheduling CR models, a collection of jobs, and a slot selection strategy. Once submitted the Reconciler first acquires all jobs, and starts running them. The Scheduling tracks the execution of all its jobs and submits new Jobs once old jobs have finished and slots become available again. Initially the Scheduling was planned to only support offline Scheduling, where an External-Scheduler plans the execution of multiple jobs in advance, however in theory updating the Scheduling spec would allow an online scheduling, but in the current state it is rather unreliable, as it only allows jobs to be added to the end of the queue.
 
-Slot selection strategy do not aim to provide a full scheduling algorithm, they are just means for an external scheduler to describe which Job should use which slot. 
+Slot selection strategy do not aim to provide a full scheduling algorithm, they are just means for an External-Scheduler to describe which Job should use which slot. 
 
 
 - Implemented as a state machine
@@ -164,7 +164,7 @@ Slot selection strategy do not aim to provide a full scheduling algorithm, they 
 - Note: Online Scheduling: is possible by updating the scheduling CR and extending the Queue
 
 
-## External Scheduler Interface
+## External-Scheduler-Interface
 
 - Interaction with the Scheduling Interface is naturally done via the Kubernetes API, creating, updating, deleting CRs. 
 - If the external-scheduler chooses not to directly interact with kubernetes, a thin layer in form of web api is provided.

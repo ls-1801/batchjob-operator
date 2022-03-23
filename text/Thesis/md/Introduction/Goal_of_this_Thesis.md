@@ -14,21 +14,21 @@ Extending existing research to the more popular Resource Manager Kubernetes prov
 
 *(TODO: Describe the Interface here)*
 
-The interface should provide easy access to the Kubernetes Cluster, allowing an external scheduler to place enqueued Batch-Jobs in predefined slots inside the cluster.
+The interface should provide easy access to the Kubernetes Cluster, allowing an External-Scheduler to place enqueued Batch-Jobs in predefined slots inside the cluster.
 
-For an external scheduler to form a scheduling decision, the interface should provide an overview of the current cluster situation containing:
+For an External-Scheduler to form a scheduling decision, the interface should provide an overview of the current cluster situation containing:
 
 1. Information about empty or in use slots in the cluster
 2. Information about Jobs in the Queue
 3. Information about the history of reoccurring Jobs, like runtime
 
-It should be possible for an external scheduler to form a scheduling decision based on a queue of jobs and metrics collected from the cluster. The interface should accept the scheduling decision and translate it into Kubernetes concepts to establish the desired scheduling in the cluster.
+It should be possible for an External-Scheduler to form a scheduling decision based on a queue of jobs and metrics collected from the cluster. The interface should accept the scheduling decision and translate it into Kubernetes concepts to establish the desired scheduling in the cluster.
 
 *(TODO: Explain shortcomings of Kubernetes)*
 
 Currently, the Kubernetes Cluster Resource Manager does not offer the concept of a Queue. Submitting jobs to the cluster would either allocate resources immediately or produce an error due to missing resources.
 
-Kubernetes does not offer the concept of dedicated Slots for Applications either. While there are various mechanisms to influence the placement of specific applications on specific nodes, these might become unreliable on a busy cluster and require a deep understanding of Kubernetes concepts, thus creating a barrier for future research.
+Kubernetes does not offer the concept of dedicated Slots for Applications either. While there are various mechanisms to influence the placement of specific applications on specific Nodes, these might become unreliable on a busy cluster and require a deep understanding of Kubernetes concepts, thus creating a barrier for future research.
 
 ### TODO:
 - Implementation of easy to use Interface that would allow already Batch Job Scheduling Algorithms likes Hugo and Mary to be run with small changes, on the popular Cluster Management Software Kubernetes
