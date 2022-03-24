@@ -1,6 +1,6 @@
 *(TODO: Cluster Resource Manager, like YARN, were focused around Batch-Application because they existed because of Apache Hadoop/Map-Reduce ecosystem)*
 
-Cluster Resource Managers, like YARN, emerging from Apache Hadoop, were centered around Batch Frameworks.
+Cluster Resource Managers, like YARN, emerging from Apache Hadoop, were centered around Batch frameworks.
 
 With the rise of Cloud Computing and all the benefits that come with it, companies were quick to adopt new cloud computing concepts. The Concept of a Cluster Resource Manager introduced a notion of simplicity to those developing applications for the cloud. A Cluster Resource Manager now managed many aspects that used to be handled by dedicated Operations-Teams.
 

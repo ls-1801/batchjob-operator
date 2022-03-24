@@ -8,7 +8,7 @@ Scaling a single machine's resources to meet the demand is also not feasible. It
 
 The complexity of dealing with a distributed system can be reduced using the abstraction of a cluster. A **Cluster Resource Manager** is used, where a system of multiple machines forms a single coherent cluster that can be given tasks to.
 
-Stream Processing of Data across such a cluster can carry out using Stream or Batch Processing Frameworks, such as Apache Spark or Apache Flink. These Frameworks already implement the quirks of dealing with distributed systems and thus hide the complexity.
+Stream Processing of Data across such a cluster can carry out using Stream or Batch Processing frameworks, such as Apache Spark or Apache Flink. These frameworks already implement the quirks of dealing with distributed systems and thus hide the complexity.
 
 
 The problem is that multiple Batch Jobs running on a single cluster need resources that need to be allocated across the cluster. While Resource Allocation is the Task of the Cluster Resource Manager, the manager usually does not know how to allocate its resources optimal and often requires user *(TODO: 1)* to specify the resources that should be allocated per job. This usually leads to either too little resources being allocated per job, starving jobs and increasing the runtime, or more often over-committing resources and thus leaving resources in the cluster unused.

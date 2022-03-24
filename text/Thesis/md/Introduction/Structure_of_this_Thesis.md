@@ -12,8 +12,7 @@ Implementation details will be given inside the Implementation Chapter, where an
 
 An Evaluation of the research and contribution done by this thesis will be presented inside the evaluation chapter. Here its functionality is demonstrated. This section will also outline some of the limitations.
 
-Before concluding the thesis, a comparison between State of the Art Technology for Kubernetes and Non-Kubernetes Scheduling Frameworks is made.
-
+Before concluding the thesis, a comparison between State of the Art Technology is made.
 
 ### TODO:
 - Thesis starts by giving a brief background to Big Data Streaming Processing, Cluster Management Systems (Kubernetes), and Scheduling
