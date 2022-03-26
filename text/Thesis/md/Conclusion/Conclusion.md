@@ -1,0 +1,1 @@
+- In hint side multiple scheduling strategies are unnecessary. The QueueBased Slot Selection Strategy is far to complex.

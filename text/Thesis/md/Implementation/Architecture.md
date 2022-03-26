@@ -1,25 +1,21 @@
-In this section, all components that make up the Interface are introduced. Here an Architectural overview is presented, and interactions between components are discussed.
+In this section, all components that make up the interface are introduced. Here an architectural overview is presented, and interactions between components are examined.
 
-The current implementation of the Scheduler Interface consists of 5 Components that will be introduced in this section but discussed in more detail in the Operator Section.
+The current implementation of the External-Scheduler-Interface consists of 5 components that will be introduced in this section but discussed in more detail in the Operator section.
 
 ![Components](graphics/architecture_components.png)
 
-The five components consist of three Reconciler or Control-Loops, the Batch-Job Reconciler, the Slots Reconciler, and the Scheduling Reconciler. The architecture also uses an Extender and, finally, the External-Scheduler facing Web-API.
+The five components consist of three Operators, each managing its resources. The architecture also uses an Extender and the external scheduler facing Web-API.
 
-The Interface that is visible to an External-Scheduler is supposed to be simple and only allows the querying of the current cluster situation, information about previous scheduling, and submission of new schedulings. Further, more concrete information, like Node metrics, can be queried from a Metric Provider that is commonly deployed along with the Cluster.
+Additionally to the three reconcilers, three CRDs were designed.
 
-Additionally to the three Reconciler, three Custom Resource Definitions (CRDs) are created.
+- **Batch Job** represents an abstract Batch Job application and can store information the external scheduler may want to remember for future invocations
 
-- *Batch Job* represents an Abstract Batch Job Application and can store information the External-Scheduler may want to remember for future invocations
+* **Testbeds** represent a testbed of guaranteed resources available for a Scheduling. A Testbed CR is a collection of slots across the clusters Node that are referenced in a Scheduling
 
-* *Slots* represent a testbed of guaranteed resources available for a *Scheduling*. A *Slots* Custom Resource is a collection of slots across the clusters Node that are referenced in a *Scheduling*
+- **Schedulings** represents the decision done by the external scheduler. A Scheduling maps multiple Batch Jobs to Testbeds available in the cluster. The scheduling also acts as a queue and submits jobs into the slots in order once slots become available.
 
-- *Scheduling* represents the decision done by the External-Scheduler. A *Scheduling* maps multiple *Batch Jobs* to *Slots* available in the Cluster. The *Scheduling* also acts as a Queue and submits Jobs into the slots in order once *Slots* become available.
+The Batch Job CR is used to model a reoccurring Batch Job application. To support both Flink and Spark applications, an abstract Batch Job CR is chosen that maps the state of application-specific CR (link SparkApplications[@SparkOperator] and FlinkCluster[@FlinkOperator]) to a common set of possible states. A Batch Job can be claimed by exactly one scheduling. This is because the Batch Job CR models exactly the life cycle of a single application.
 
-The Batch Job CR is used to Model a reoccurring Batch Job Application. In order to support both Flink and Spark Applications, an abstract Batch Job CR is chosen that maps the state of application-specific CR (link SparkApplications[@SparkOperator] and FlinkCluster[@FlinkOperator]) to a common set of possible States. (Information about possible States and the corresponding State Machine are discussed in the Batch Job Operator Section). A Batch Job can be claimed by exactly one *Scheduling*, this is because the Batch Job CR models exactly the life cycle of a single application.
+Using the extender and preemption, the Testbed reconciler can reserve resources for Pods created by the Batch Job CR. The Slots CR guarantees resources in the cluster by creating Ghost Pods, with a specific resource request representing the size of a slot. The Ghost Pods reserve resources by preventing other Pods requiring scheduling to be scheduled onto the same Node.
 
-The Slots CR guarantees Resources in the Cluster by creating Ghost Pods, with a specific Resource Request representing the Size of an empty Slot. The Ghost Pods reserve resources by not allowing other Pods requiring scheduling to be scheduled onto the same Node. Using the extender and Preemption, the Slot Reconciler can reserve resources for Pods created by the Batch Job CR.
-
-Finally, the Scheduling CR is passed to the external Interface by the External-Scheduler. Given a Set of Batch Jobs and the Slots and the Node they exist on, an External-Scheduler can compute a *Scheduling*  that chooses Batch Jobs and the Slots they should run in.
-
-**Note**: Reconciler and Control-Loop can be used interchangeably, but for less confusion with the Spring Boot Concept of a Controller, the principle of a Control-Loop will be called Reconciler**
+Finally, the Scheduling CR is passed to the External-Scheduler-Interface by the external scheduler. Given a set of Batch Jobs and the slots and the Node they exist on, an external scheduler can compute a Scheduling that chooses Batch Jobs and the slots they should run in.

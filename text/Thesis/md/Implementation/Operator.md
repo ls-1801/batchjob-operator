@@ -1,72 +1,74 @@
+In this section the Operators controlling CRDs introduced in the previous section are discussed.
+
 ## Batch Job Operator
 
-The Batch Job Operator comprises the Batch Job Reconciler and the Batch Job CRD. The Reconciler is listing for changes regarding the Batch Jobs CRs and Applications CRs, which are managed by the Spark Operator and the Flink Operator.
+The Batch Job Operators control-loop is listing for changes regarding the Batch Jobs CRs and applications CRs, which are managed by the Spark Operator and the Flink Operator.
 
-The Batch Job Operator knows how to construct the corresponding application given the Batch Job CRs specification. With the Spark and Flink Operator, reusing existing software allows the Batch Job CR to be only a thin wrapper around either a Spark or a Flink specification. In addition to the Spark and Flink CR, it may contain additional information that previous invocations of the External-Scheduler have stored.
+The Batch Job Operator knows how to construct the corresponding application given the Batch Job CRs specification. With the Spark and Flink Operator, reusing existing software allows the Batch Job CR to be only a thin wrapper around either a Spark or a Flink specification. In addition to the Spark and Flink CR, it may contain additional information that previous invocations of the external scheduler have stored.
 
-Currently, the Batch Job CR only contains a partial application-specific specification. The  Batch Job CR requires a user to specify only the Required Components, like Application Image containing the actual application and its arguments like a dataset or where to find it (e.g., using HDFS). Although it would not matter, if a user would submit a fully specified Flink or Spark Application, the Operator would overwrite most of the Driver/Executor Pod specific configuration and replication configuration.
+Currently, the Batch Job CR only contains a partial application-specific specification. The  Batch Job CR requires a user to specify only the required components, like application image containing the actual application and its arguments like a dataset or where to find it (e.g., using HDFS). Although it would not matter, if a user would submit a fully specified Flink or Spark application, the Operator would overwrite most of the Driver/Executor Pod specific configuration and replication configuration.
 
 ![StateMachine](graphics/batch_job_state_machine.pdf)
 
-The Batch Job Reconciler is implemented as a nested state machine with anonymous sub-states. The Approach was chosen as it creates more comprehensible software, which can be split easier into Components and handle edge cases by design. 
+The Batch Job reconciler is implemented as a nested state machine with anonymous sub-states. The approach was chosen as it creates more comprehensible software, which can be split easier into components and handle edge cases by design. 
 
-Initially, Batch Jobs submitted to the cluster remain in the Ready State. While in the Ready State, the Batch Job Reconciler will not do anything. A *Scheduling* can acquire a Batch Job. The Batch Job CR will move into the InQueueState until the *Scheduling* instructs the Batch Job Operator to create the application and track its lifecycle or releases it.
+Initially, Batch Jobs submitted to the cluster remain in the ready state. While in the ready state, the Batch Job reconciler will not do anything. A Scheduling can acquire a Batch Job. The Batch Job CR will move into the in-queue state until the Scheduling instructs the Batch Job Operator to create the application and track its lifecycle or releases it.
 
-Communication between the Batch Job Reconciler and the Scheduling Reconciler is done via the *Batch Jobs* spec (*.spec.activeScheduling* and *.spec.creationRequest*). If *scheduling* wants to claim a Job, it updates the active scheduling spec. This mechanism ensures that only one *Scheduling* at a time can use the *Batch Job*. On the flip side, a *Scheduling* can claim multiple *Batch Jobs*. Suppose the active *scheduling* releases the Job; by removing the activeScheduling spec, the *Batch Job* moves back into the Ready State. Releasing a Job could happen at any time and may even cause any created application to be removed.
+Communication between the Batch Job reconciler and the Scheduling reconciler is done via the Batch Jobs spec (`.spec.activeScheduling` and `.spec.creationRequest`). If *scheduling* wants to claim a Job, it updates the active scheduling spec. This mechanism ensures that only one Scheduling at a time can use the Batch Job. On the flip side, a Scheduling can claim multiple Batch Jobs. Suppose the active *scheduling* releases the job; by removing the `activeScheduling` spec the Batch Job moves back into the ready state. Releasing a job could happen at any time and may even cause any created application to be removed.
 
-Once a Batch Job is in the InQueue State, the Reconciler waits for the creation request issued by the *Scheduling* Reconciler. The request is again done using the *Batch Jobs* spec and specifies desired replication and the *TestBed* and slots the application should use.
+Once a Batch Job is in the in-queue state, the reconciler waits for the creation request issued by the Scheduling reconciler. The request is again done using the Batch Jobs spec and specifies desired replication and the TestBed and slots the application should use.
 
 When configuring the application to be created by the corresponding Operator, there are two types of configuration. Configuration can either be:
 
-- Persisted inside the Batch Job CR, which is used on every invocation of the application. This includes the Applications Image and arguments, like the data set
+- Persisted inside the Batch Job CR, which is used on every invocation of the application. This includes the applications image and arguments, like the data set
 
 - Scheduling dependent. These configurations can not be stored inside the CR and must be supplied with the creation request.
 
-After a Batch Job was requested to create the application, application-specific logic is executed. In any case, the actual steps for deploying the applications to the cluster are done by the Applications Operator (Flink Operator[@FlinkOperator] or Spark Operator[@SparkOperator]). The Batch Job Reconciler only instructs the Application Operators with configurations for the Executor/TaskManager Pods, so they are identifiable to the Extender.
+After a Batch Job was requested to create the application, application-specific logic is executed. In any case, the actual steps for deploying the applications to the cluster are done by the applications Operator (Flink Operator[@FlinkOperator] or Spark Operator[@SparkOperator]). The Batch Job reconciler only instructs the application Operators with configurations for the Executor/TaskManager Pods, so they are identifiable to the Extender.
 
 When creating the application, the following aspects are configured for the Executor/TaskManager Pods:
 
-- **Resource Requests**: The Container resources are specified by the Testbeds slot size. For the Pods to fit inside a slot, they need the correct Resource Request. (Currently only CPU and Memory)
+- **Resource Requests**: The container resources are specified by the Testbeds slot size. For the Pods to fit inside a slot, they need the correct resource request. (currently only CPU and memory)
 
-- **Slot IDs**: The Scheduling (or the External-Scheduler) decides which slots are used by which Job. For the Executor/TaskManager Pods to be placed into the correct slot (technically the correct Node), Pods need to be made identifiable by the Scheduler Extender.
+- **Slot IDs**: The Scheduling (or the external scheduler) decides which slots are used by which Job. For the Executor/TaskManager Pods to be placed into the correct slot (technically the correct Node), Pods need to be made identifiable by the scheduler extender.
 
-- **replication**: The Number of Executor/TaskManager Pods depends on the Number of Slots that will be used for the application.
+- **replication**: The number of Executor/TaskManager Pods depends on the number of slots that will be used for the application.
 
-- **Priority Class**: Application Pods need a *PriorityClass* otherwise, preemption will not be triggered by the Kubernetes Scheduler.
+- **Priority Class**: Application Pods need a `.spec.priorityClassName` otherwise, preemption will not be triggered by the Kubernetes scheduler.
 
-- **Scheduler Name**: Application Pods need a *SchedulerName* otherwise, the default KubeScheduler will handle the Scheduling and thus ignore the Scheduling Extender.
+- **Scheduler Name**: Application pods need a `spec.schedulerName` otherwise, the default Kube scheduler will handle the scheduling and thus ignore the Extender.
 
 Configuration of **Resource Requests**, **Replication** is straightforward, as both the Spark and Flink Operator expose these via their respective CRDs. The Spark Operator actually exposes the complete PodSpec for both driver and executor Pods, whereas the Flink Operator only exposes a few PodSpec attributes. The Flink Operator had to be extended with the missing configurations. This way **Resource Requests**, **Replication**, **Priority Class**, **Scheduler Name** are configured.
 
-The difference between any of the mentioned above configurations and the **Slot IDs** is that the Application Operators only allow (rightfully so) to specify a single Pod spec. This is because the Executor/TaskManager Pods are controlled by a Stateful Set, which scales up to the desired replication. However, the configurations mentioned above are valid for all Pods, but *Slot IDs* need to be different.
+The difference between any of the mentioned above configurations and the **Slot IDs** is that the application Operators only allow (rightfully so) to specify a single Pod spec. This is because the Executor/TaskManager Pods are controlled by a StatefulSet, which scales up to the desired replication. However, the configurations mentioned above are valid for all Pods, but **Slot IDs** need to be different.
 
-This issue can be circumvented by leaving the final decision of which Pod goes into which slot to the Extender—submitting only a list of all SlotIDs to the Extender. The Extender needs to decide which Pod goes into which slot. Pods are configured with an affinity of the combined set of Nodes where the slots reside on.
+This issue can be circumvented by leaving the final decision of which Pod goes into which slot to the Extender. Submitting only a list of all **SlotIDs** to the Extender. The Extender needs to decide which Pod goes into which slot. Pods are configured with an affinity of the combined set of Nodes where the slots reside on.
 
 ![Affinities](graphics/affinity.png){height=25%}
 
-Once the application was created, the Job moves into the Submission State. It resides there until all Pods where scheduled, at which point it moves on into the Running State. The underlying Applications state is monitored until it moves into the application-specific completed state (Spark: *Completed* and Flink: *Stopped*). During the implementation, scenarios were encountered in which the Batch Job reconciler was not running. Once restarted, found Applications in a completed state without passing the Scheduling, submission, or running state. To prevent any tight coupling, none of these transitions are required to be considered a successful execution.
+Once the application was created, the job moves into the submitted state. It resides there until all Pods where scheduled, at which point it moves on into the running state. The underlying applications state is monitored until it moves into the application-specific completed state (Spark: `Completed` an Flink: `Stopped`). During the implementation, scenarios were encountered in which the Batch Job reconciler was not running. Once restarted, it found applications in a completed state without passing the scheduling, submission, or running state. To prevent any tight coupling, none of these transitions are required to be considered a successful execution.
 
 The Batch Job reconciler tracks the time an application ran by creating timestamps once it started running and its completion.
 
 ## TestBed Operator
 
-The *TestBed* Operator comprises the Reconciler Loop and the *TestBeds* CRD. The *TestBeds* CR is supposed to model a Collection of slots located in a Cluster of Machines. Slots can have specified Resources. While no application is running inside a slot, it is considered *free*. To reserve resources in the cluster and thus guarantee applications supposed to be deployed inside a *free* slot actually to get the resources, the *TestBed* Operator needs to:
+The TestBed Operator monitors changes to Pods and Nodes in addition to controlling Testbed CRs. The TestBeds CR is supposed to model a collection of slots located in a cluster of machines. Slots can have specified resources. While no application is running inside a slot, it is considered *free*. To reserve resources in the cluster and thus guarantee applications supposed to be deployed inside a *free* slot actually to get the resources, the Testbed Operator needs to:
 
 - **Reserve Resources** by using so-called Ghost Pods inside the cluster that specify a resource request and thus reserve the resources
 
 - **Preempt** Ghost Pods for Pods that wants to be deployed inside a slot
 
-The TestBed Reconciler listens to changes to the TestBed CR and the current cluster situation. It ensures that the correct number of Pods with the specified resource requests are always deployed onto the cluster. The TestBed CR is composed of the following configurations:
+The Testbed reconciler listens to changes to the Testbed CR and the current cluster situation. It ensures that the correct number of Pods with the specified resource requests are always deployed onto the cluster. The Testbed CR is composed of the following configurations:
 
-- Label Name to Identify any Nodes that are part of the TestBed. Only the Label Name is specified, not a specific value. The value is later used to create a distinct order of slots in the cluster.
+- Label Name to identify any Nodes that form the Testbed. Only the label name is specified, not a specific value. The value is later used to create a distinct order of slots in the cluster.
 
 - Number of slots per Node
 
-- Resource Request per slot
+- Resource request per slot
 
-Given the Testbeds specification, the Reconciler listens for all changes to Nodes **with** the specified label. It also needs to listen for Nodes **without** any label if the label was removed and the Testbed needs to be resized. Further, it also listens to changes to any Pod part of the Test Bed.
+Given the Testbeds specification, the reconciler listens for all changes to Nodes **with** the specified label. It also needs to listen for Nodes **without** any label if the label was removed and the Testbed needs to be resized. Further, it also listens to changes to any Pod part of the Testbed.
 
-The typical Reconciliation Loop works as follows:
+The typical reconciliation loop works as follows:
 
 - Fetch the current cluster situation
 
@@ -144,9 +146,9 @@ For the TestBed Reconciler to detect scheduled Pods the Extender will in additio
 
 ## Scheduling Operator
 Once again the Scheduling Operator is composed of the Reconciler Loop and the Scheduling CRD. The Scheduling Reconciler like the Batch Job Reconciler implemented using a nested Statemachine. 
-The Scheduling CR models, a collection of jobs, and a slot selection strategy. Once submitted the Reconciler first acquires all jobs, and starts running them. The Scheduling tracks the execution of all its jobs and submits new Jobs once old jobs have finished and slots become available again. Initially the Scheduling was planned to only support offline Scheduling, where an External-Scheduler plans the execution of multiple jobs in advance, however in theory updating the Scheduling spec would allow an online scheduling, but in the current state it is rather unreliable, as it only allows jobs to be added to the end of the queue.
+The Scheduling CR models, a collection of jobs, and a slot selection strategy. Once submitted the Reconciler first acquires all jobs, and starts running them. The Scheduling tracks the execution of all its jobs and submits new Jobs once old jobs have finished and slots become available again. Initially the Scheduling was planned to only support offline Scheduling, where an external scheduler plans the execution of multiple jobs in advance, however in theory updating the Scheduling spec would allow an online scheduling, but in the current state it is rather unreliable, as it only allows jobs to be added to the end of the queue.
 
-Slot selection strategy do not aim to provide a full scheduling algorithm, they are just means for an External-Scheduler to describe which Job should use which slot. 
+Slot selection strategy do not aim to provide a full scheduling algorithm, they are just means for an external scheduler to describe which Job should use which slot. 
 
 
 - Implemented as a state machine
