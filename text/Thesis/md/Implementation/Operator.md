@@ -2,7 +2,7 @@ In this section the Operators controlling CRDs introduced in the previous sectio
 
 ## Batch Job Operator
 
-The Batch Job Operators control-loop is listing for changes regarding the Batch Jobs CRs and applications CRs, which are managed by the Spark Operator and the Flink Operator.
+The Batch Job Operators control loop is listing for changes regarding the Batch Jobs CRs and applications CRs, which are managed by the Spark Operator and the Flink Operator.
 
 The Batch Job Operator knows how to construct the corresponding application given the Batch Job CRs specification. With the Spark and Flink Operator, reusing existing software allows the Batch Job CR to be only a thin wrapper around either a Spark or a Flink specification. In addition to the Spark and Flink CR, it may contain additional information that previous invocations of the external scheduler have stored.
 
@@ -108,7 +108,7 @@ Fetch the current cluster situation by fetching all Pods with the **SLOT** label
 \caption{TestBed Observed and Desired}
 \end{figure}
 
-The Reconciler now builds a set of observed Pods and a set of desired Pods. \ref{SlotsNewPods} shows an example scenario where the control-loop realizes that Pods from the desired state are not in the current state, thus creating the missing Pods in the *desired and not existing* set. In a different scenario displayed by \ref{SlotsNodeChange} the label on a Node was removed, thus reducing the number of slots inside the Testbed. Pods that are in the *existing and not desired* set will be removed. The final set is the *desired and existing* set, which contains Pods that already have the correct resources requirement and are placed on the correct Node.
+The Reconciler now builds a set of observed Pods and a set of desired Pods. \ref{SlotsNewPods} shows an example scenario where the control loop realizes that Pods from the desired state are not in the current state, thus creating the missing Pods in the *desired and not existing* set. In a different scenario displayed by \ref{SlotsNodeChange} the label on a Node was removed, thus reducing the number of slots inside the Testbed. Pods that are in the *existing and not desired* set will be removed. The final set is the *desired and existing* set, which contains Pods that already have the correct resources requirement and are placed on the correct Node.
 
 Currently, the SlotOccupationStatus holds the following information: 
 

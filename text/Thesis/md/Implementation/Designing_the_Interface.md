@@ -16,7 +16,7 @@ spec:
     type: Scala
     image: "gcr.io/spark-on-kubernetes-316714/spark-webcrawler:latest"
     imagePullPolicy: Always
-    mainClass: de.tuberlin.batchjoboperator.spark.webcrawler.WebCrawlerApplication
+    mainClass: de.tuberlin.batchjobOperator.spark.webcrawler.WebCrawlerApplication
     mainApplicationFile: "local:///opt/spark/examples/webcrawler.jar"
     arguments:
     - Web_crawler
