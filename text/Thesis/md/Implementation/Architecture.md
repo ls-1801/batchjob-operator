@@ -54,7 +54,7 @@ The Batch Job reconciler tracks the time an application ran by creating timestam
 
 ## TestBed Operator
 
-The TestBed Operator monitors changes to Pods and Nodes in addition to controlling Testbed CRs. The TestBeds CR is supposed to model a collection of slots located in a cluster of machines. Slots can have specified resources. While no application is running inside a slot, it is considered *free*. To reserve resources in the cluster and thus guarantee applications supposed to be deployed inside a *free* slot actually to get the resources, the Testbed Operator needs to:
+The TestBed Operator monitors changes to Pods and Nodes in addition to controlling Testbed CRs. The TestBeds CR is supposed to model a collection of slots located in a cluster of machines. Slots can have specified resources. While no application is running inside a slot, it is considered *free*. To reserve resources in the cluster and thus guarantee applications supposed to be deployed inside a free slot actually to get the resources, the Testbed Operator needs to:
 
 - **Reserve Resources** by using so-called Ghost Pods inside the cluster that specify a resource request and thus reserve the resources
 
@@ -130,7 +130,7 @@ Currently, a cluster is considered in progress if any Pods require Scheduling (.
 
 The Extender is the component that directly interacts with the Kubernetes Scheduler. An additional scheduler, with an additional scheduling profile, is running concurrently to the default Kube-Scheduler. The custom scheduler (referred to as Kube-Scheduler) is configured to use the Extender. To guarantee the Scheduling of Pods onto the TestBeds slots, the Extender extends the Filter and Preemption extension points of the Kubernetes scheduling cycle. The main problem the Extender can solve is that the Batch Job Operator does not have full control of Pods created downstream by the applications Operator. 
 
-\ref{ComponentsInControl} shows which of the components and resources managed by them are under the control of the External-Interfaces System. The Batch Job Operator can only control the Application CR created. The Application CR only describes a single PodSpec, which will later be replicated into multiple Pods by the Replication Controller, part of the StatefulSet. Thus, it is impossible to set Pod-specific configurations, like the SlotID, at the Batch Job Operator Level. However, with enough information, all Pods can be configured for the Extender to figure out which Pod belongs in which slot.
+Figure \ref{ComponentsInControl} shows which of the components and resources managed by them are under the control of the External-Interfaces System. The Batch Job Operator can only control the Application CR created. The Application CR only describes a single PodSpec, which will later be replicated into multiple Pods by the Replication Controller, part of the StatefulSet. Thus, it is impossible to set Pod-specific configurations, like the SlotID, at the Batch Job Operator Level. However, with enough information, all Pods can be configured for the Extender to figure out which Pod belongs in which slot.
 
 **Note**: PodSpec here only refers to the TaskManager/Executor PodSpec, as the External-Interface does not handle Scheduling of the JobManager/Driver Pods.
 
