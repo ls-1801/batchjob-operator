@@ -11,16 +11,8 @@ The complexity of dealing with a distributed system can be reduced using the abs
 Stream Processing of Data across such a cluster can carry out using Stream or Batch Processing frameworks, such as Apache Spark or Apache Flink. These frameworks already implement the quirks of dealing with distributed systems and thus hide the complexity.
 
 
-The problem is that multiple Batch Jobs running on a single cluster need resources that need to be allocated across the cluster. While Resource Allocation is the Task of the Cluster Resource Manager, the manager usually does not know how to allocate its resources optimal and often requires user *(TODO: 1)* to specify the resources that should be allocated per job. This usually leads to either too little resources being allocated per job, starving jobs and increasing the runtime, or more often over-committing resources and thus leaving resources in the cluster unused.
+The problem is that multiple Batch Jobs running on a single cluster need resources that need to be allocated across the cluster. While Resource Allocation is the Task of the Cluster Resource Manager, the manager usually does not know how to allocate its resources optimal and often requires user to specify the resources that should be allocated per job. This usually leads to either too little resources being allocated per job, starving jobs and increasing the runtime, or more often over-committing resources and thus leaving resources in the cluster unused.
 
 Another problem that arises is the fact that even though the reoccurring nature of Batch Jobs, not all Batch Jobs use the same amount of Resources. Some are more computationally intensive and require more time on the CPU, while others are more memory intensive and require more or faster access to the machine's memory. Others are heavy on the I/O usage and use most of the system's disk or network devices. This shows up in vastly different Job runtime (also total runtime) depending on the Scheduling of Batch Jobs across the Cluster.
 
 Finding an intelligent Scheduling Algorithm that can identify reoccurring Jobs and estimate their resource usage based on collected Metrics and thus create optimal scheduling is not an easy task. It also requires a lot of setup when dealing with a Cluster Resource Manager.
-
-
-### TODO:
-1. not just a user but the cluster user which is submitting the job
-
-### Open:
-- How much detail is required here?
-

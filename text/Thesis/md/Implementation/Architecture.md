@@ -2,7 +2,7 @@ In this section, all components that make up the interface are introduced. Here 
 
 The current implementation of the External-Scheduler-Interface consists of 5 components that will be introduced in this section but discussed in more detail in the Operator section.
 
-![Components](graphics/architecture_components.png)
+![Components](graphics/architecture.pdf)
 
 The five components consist of three Operators, each managing its resources. The architecture also uses an Extender and the external scheduler facing Web-API.
 
