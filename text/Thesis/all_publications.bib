@@ -1,131 +1,20 @@
 % This file was created with JabRef 2.4.
 % Encoding: Cp1252
 
-@inproceedings{da2015survey,
-  title     = {Survey on frameworks for distributed computing: Hadoop, spark and storm},
-  author    = {da Silva Morais, Telmo},
-  booktitle = {Proceedings of the 10th Doctoral Symposium in Informatics Engineering-DSIE},
-  volume    = {15},
-  year      = {2015}
-}
 
-@inproceedings{10.1145/2523616.2523633,
-  author    = {Vavilapalli, Vinod Kumar and Murthy, Arun C. and Douglas, Chris and Agarwal, Sharad and Konar, Mahadev and Evans, Robert and Graves, Thomas and Lowe, Jason and Shah, Hitesh and Seth, Siddharth and Saha, Bikas and Curino, Carlo and O'Malley, Owen and Radia, Sanjay and Reed, Benjamin and Baldeschwieler, Eric},
-  title     = {Apache Hadoop YARN: Yet Another Resource Negotiator},
-  year      = {2013},
-  isbn      = {9781450324281},
-  publisher = {Association for Computing Machinery},
-  address   = {New York, NY, USA},
-  url       = {https://doi.org/10.1145/2523616.2523633},
-  doi       = {10.1145/2523616.2523633},
-  abstract  = {The initial design of Apache Hadoop [1] was tightly focused on running massive, MapReduce jobs to process a web crawl. For increasingly diverse companies, Hadoop has become the data and computational agor\'{a}---the de facto place where data and computational resources are shared and accessed. This broad adoption and ubiquitous usage has stretched the initial design well beyond its intended target, exposing two key shortcomings: 1) tight coupling of a specific programming model with the resource management infrastructure, forcing developers to abuse the MapReduce programming model, and 2) centralized handling of jobs' control flow, which resulted in endless scalability concerns for the scheduler.In this paper, we summarize the design, development, and current state of deployment of the next generation of Hadoop's compute platform: YARN. The new architecture we introduced decouples the programming model from the resource management infrastructure, and delegates many scheduling functions (e.g., task fault-tolerance) to per-application components. We provide experimental evidence demonstrating the improvements we made, confirm improved efficiency by reporting the experience of running YARN on production environments (including 100% of Yahoo! grids), and confirm the flexibility claims by discussing the porting of several programming frameworks onto YARN viz. Dryad, Giraph, Hoya, Hadoop MapReduce, REEF, Spark, Storm, Tez.},
-  booktitle = {Proceedings of the 4th Annual Symposium on Cloud Computing},
-  articleno = {5},
-  numpages  = {16},
-  location  = {Santa Clara, California},
-  series    = {SOCC '13}
-}
-
-@inproceedings{hindman2011mesos,
-  title     = {Mesos: A Platform for $\{$Fine-Grained$\}$ Resource Sharing in the Data Center},
-  author    = {Hindman, Benjamin and Konwinski, Andy and Zaharia, Matei and Ghodsi, Ali and Joseph, Anthony D and Katz, Randy and Shenker, Scott and Stoica, Ion},
-  booktitle = {8th USENIX Symposium on Networked Systems Design and Implementation (NSDI 11)},
-  year      = {2011}
-}
-
-@inproceedings{1558641,
-  author    = {Capit, N. and Da Costa, G. and Georgiou, Y. and Huard, G. and Martin, C. and Mounie, G. and Neyron, P. and Richard, O.},
-  booktitle = {CCGrid 2005. IEEE International Symposium on Cluster Computing and the Grid, 2005.},
-  title     = {A batch scheduler with high level components},
-  year      = {2005},
-  volume    = {2},
-  number    = {},
-  pages     = {776-783 Vol. 2},
-  doi       = {10.1109/CCGRID.2005.1558641}
-}
-
-@inproceedings{zaharia2010spark,
-  title     = {Spark: Cluster computing with working sets},
-  author    = {Zaharia, Matei and Chowdhury, Mosharaf and Franklin, Michael J and Shenker, Scott and Stoica, Ion},
-  booktitle = {2nd USENIX Workshop on Hot Topics in Cloud Computing (HotCloud 10)},
-  year      = {2010}
-}
-
-@misc{kubernetesPodDocs,
-  title        = {{kubernets.io} Concepts / Pods},
-  howpublished = {\url{https://kubernetes.io/docs/concepts/workloads/pods/}},
-  note         = {Accessed: 2022-03-09}
-}
-
-
-@misc{kubernetesStatefulSetsDocs,
-  title        = {{kubernets.io} Concepts / StatefulSets},
-  howpublished = {\url{https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/}},
-  note         = {Accessed: 2022-03-21}
-}
-
-@misc{kubernetesDeploymentsDocs,
-  title        = {{kubernets.io} Concepts / Deployments},
-  howpublished = {\url{https://kubernetes.io/docs/concepts/workloads/controllers/deployment/}},
-  note         = {Accessed: 2022-03-21}
-}
-
-
-@misc{rbacProxy,
-  title        = {{github.com} brancz/kube-rbac-proxy},
-  howpublished = {\url{https://github.com/brancz/kube-rbac-proxy}},
-  note         = {Accessed: 2022-03-09}
-}
-
-
-@misc{kubernetesLargeCluster,
-  author       = {},
-  howpublished = {\url{https://kubernetes.io/docs/setup/best-practices/cluster-large/}},
-  title        = {{kubernets.io} Getting started / Considerations for large clusters},
-  note         = {Accessed: 2022-03-23}
-}
-
-@misc{kubernetesResourceQuotas,
-  author       = {},
-  howpublished = {\url{https://kubernetes.io/docs/concepts/policy/resource-quotas/}},
-  title        = {{kubernets.io} Concepts / Resource Quotas},
-  note         = {Accessed: 2022-03-23}
-}
-
-
-@misc{kubernetesSchedulerDocs,
-  author       = {},
-  howpublished = {\url{https://kubernetes.io/docs/concepts/scheduling-eviction/kube-scheduler/}},
-  title        = {{kubernets.io} Concepts/Scheduler},
-  note         = {Accessed: 2022-03-09}
-}
-
-@misc{hpcWikiScheduling,
-  author       = {},
-  howpublished = {\url{https://hpc-wiki.info/hpc/Scheduling_Basics}},
-  title        = {{hpc-wiki.info} Scheduling Basics},
-  note         = {Accessed: 2022-03-09}
-}
 
 @misc{SparkOperator,
-  author       = {},
+  author       = {GoogleCloudPlatform},
   howpublished = {\url{https://github.com/GoogleCloudPlatform/spark-on-k8s-operator}},
   title        = {{GitHub.com} GCP/Spark-On-K8s-Operator},
   note         = {Accessed: 2022-03-10}
 }
 
 @misc{FlinkOperator,
-  author       = {},
+  author       = {spotify},
   howpublished = {\url{https://github.com/spotify/flink-on-k8s-operator}},
   title        = {{GitHub.com} Spotify/Flink-On-K8s-Operator},
   note         = {Accessed: 2022-03-10}
-}
-
-@misc{DataBricks,
-  author       = {},
-  howpublished = {\url{https://databricks.com/blog/2014/03/20/apache-spark-a-delight-for-developers.html}},
-  title        = {{databricks.com} Blog Apache Spark: A Delight for Developers},
-  note         = {Accessed: 2022-03-17}
 }
 
 @article{dean2008mapreduce,
@@ -143,14 +32,14 @@
 
 
 @inproceedings{10.1007/978-3-030-96498-6_18,
-  author    = {Misale, Claudia
-               and Milroy, Daniel J.
-               and Gutierrez, Carlos Eduardo Arango
-               and Drocco, Maurizio
-               and Herbein, Stephen
-               and Ahn, Dong H.
-               and Kaiser, Zvonko
-               and Park, Yoonho},
+  author    = {Claudia Misale
+               and Daniel J. Milroy
+               and Carlos Eduardo Arango Gutierrez 
+               and Maurizio Drocco
+               and Stephen Herbein
+               and Dong H. Ahn
+               and Zvonko Kaiser
+               and Yoonho Park},
   editor    = {Nichols, Jeffrey
                and Maccabe, Arthur `Barney'
                and Nutaro, James
@@ -170,7 +59,7 @@
 
 
 @inproceedings{FluxPoster,
-  author    = {Stephen Herbein, Tapasya Patki, Dong H. Ahn, Don Lipari, Tamara Dahlgren, David Domyancic, Michela Taufer},
+  author    = {Stephen Herbein and Tapasya Patki and Dong H. Ahn and Don Lipari and Tamara Dahlgren and David Domyancic and Michela Taufer},
   title     = {Fully Hierarchical Scheduling: Paving the Way to Exascale Workloads},
   booktitle = {International Conference for High Performance Computing, Networking, Storage and Analysis, Denver, CO},
   year      = {2017}
@@ -208,12 +97,14 @@
 }
 
 @misc{Stomp,
+  author       = {stomp-spec@googlegroups.com},
   howpublished = {\url{https://stomp.github.io/}},
   title        = {The Simple Text Oriented Messaging Protocol},
   note         = {Accessed: 2022-03-21}
 }
 
 @misc{OperatorSdkBestPractice,
+  author       = {operatorframework},
   howpublished = {\url{https://sdk.operatorframework.io/docs/best-practices/best-practices/}},
   title        = {Operator Best Practices},
   note         = {Accessed: 2022-03-21}
@@ -240,34 +131,236 @@
   publisher = {ACM New York, NY, USA}
 }
 
-@article{Configuring_The_Built-In_2022_kubernetes,
-  author = {Configuring The Built-In},
+@misc{Configuring_The_Built-In_2022_kubernetes-nodes,
+  author = {Kubernetes},
   title  = {Nodes | Kubernetes},
   year   = {2022},
   url    = {https://kubernetes.io/docs/concepts/architecture/nodes/}
 }
 
-@article{Configuring_The_Built-In_2022_kubernetes,
-  author = {Configuring The Built-In},
+@misc{Configuring_The_Built-In_2022_kubernetes-daemonset,
+  author = {Kubernetes},
   title  = {DaemonSet | Kubernetes},
   year   = {2022},
   url    = {https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/}
 }
 
-@article{Configuring_The_Built-In_2022_kubernetes,
-  author = {Configuring The Built-In},
+@misc{Configuring_The_Built-In_2022_kubernetes-limits-and-requests,
+  author = {Kubernetes},
   title  = {Resource Management for Pods and Containers | Kubernetes},
   year   = {2022},
   url    = {https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#resource-requests-and-limits-of-pod-and-container}
 }
 
-@article{thamsen2021mary,
-  title={Mary, Hugo, and Hugo*: Learning to schedule distributed data-parallel processing jobs on shared clusters},
-  author={Thamsen, Lauritz and Beilharz, Jossekin and Tran, Vinh Thuy and Nedelkoski, Sasho and Kao, Odej},
-  journal={Concurrency and Computation: Practice and Experience},
-  volume={33},
-  number={18},
-  pages={e5823},
-  year={2021},
-  publisher={Wiley Online Library}
+@misc{Configuring_The_Built-In_2022_kubernetes-taints-and-tolerations,
+  author = {Kubernetes},
+  title  = {Taints and Tolerations | Kubernetes},
+  year   = {2022},
+  url    = {https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/}
 }
+
+@article{thamsen2021mary,
+  title     = {Mary, Hugo, and Hugo*: Learning to schedule distributed data-parallel processing jobs on shared clusters},
+  author    = {Thamsen, Lauritz and Beilharz, Jossekin and Tran, Vinh Thuy and Nedelkoski, Sasho and Kao, Odej},
+  journal   = {Concurrency and Computation: Practice and Experience},
+  volume    = {33},
+  number    = {18},
+  pages     = {e5823},
+  year      = {2021},
+  publisher = {Wiley Online Library}
+}
+
+@inproceedings{8968907,
+  authr     = {Pereira Ferreira, Arnaldo and Sinnott, Richard},
+  booktitle = {2019 IEEE International Conference on Cloud Computing Technology and Science (CloudCom)},
+  title     = {A Performance Evaluation of Containers Running on Managed Kubernetes Services},
+  year      = {2019},
+  volume    = {},
+  number    = {},
+  pages     = {199-208},
+  doi       = {10.1109/CloudCom.2019.00038}
+}
+
+@article{khallouli2021cluster,
+  title     = {Cluster resource scheduling in cloud computing: literature review and research challenges},
+  author    = {Khallouli, Wael and Huang, Jingwei},
+  journal   = {The Journal of Supercomputing},
+  pages     = {1--46},
+  year      = {2021},
+  publisher = {Springer}
+}
+
+@article{marr2017really,
+  title   = {Really big data at Walmart: Real-time insights from their 40+ petabyte data cloud},
+  author  = {Marr, Bernard},
+  journal = {Forbes. com},
+  volume  = {23},
+  year    = {2017}
+}
+
+@article{miloslavskaya2016big,
+  title     = {Big data, fast data and data lake concepts},
+  author    = {Miloslavskaya, Natalia and Tolstoy, Alexander},
+  journal   = {Procedia Computer Science},
+  volume    = {88},
+  pages     = {300--305},
+  year      = {2016},
+  publisher = {Elsevier}
+}
+
+@inproceedings{agrawal2010data,
+  title        = {Data management challenges in cloud computing infrastructures},
+  author       = {Agrawal, Divyakant and Abbadi, Amr El and Antony, Shyam and Das, Sudipto},
+  booktitle    = {International Workshop on Databases in Networked Information Systems},
+  pages        = {1--10},
+  year         = {2010},
+  organization = {Springer}
+}
+
+@article{weiss2007computing,
+  title     = {Computing in the clouds},
+  author    = {Weiss, Aaron},
+  journal   = {networker},
+  volume    = {11},
+  number    = {4},
+  pages     = {16--25},
+  year      = {2007},
+  publisher = {ACM New York, NY, USA}
+}
+
+@inproceedings{da2015survey,
+  title     = {Survey on frameworks for distributed computing: Hadoop, spark and storm},
+  author    = {da Silva Morais, Telmo},
+  booktitle = {Proceedings of the 10th Doctoral Symposium in Informatics Engineering-DSIE},
+  volume    = {15},
+  year      = {2015}
+}
+
+@inproceedings{10.1145/2523616.2523633,
+  author    = {Vavilapalli, Vinod Kumar and Murthy, Arun C. and Douglas, Chris and Agarwal, Sharad and Konar, Mahadev and Evans, Robert and Graves, Thomas and Lowe, Jason and Shah, Hitesh and Seth, Siddharth and Saha, Bikas and Curino, Carlo and O'Malley, Owen and Radia, Sanjay and Reed, Benjamin and Baldeschwieler, Eric},
+  title     = {Apache Hadoop YARN: Yet Another Resource Negotiator},
+  year      = {2013},
+  isbn      = {9781450324281},
+  publisher = {Association for Computing Machinery},
+  address   = {New York, NY, USA},
+  url       = {https://doi.org/10.1145/2523616.2523633},
+  doi       = {10.1145/2523616.2523633},
+  abstract  = {The initial design of Apache Hadoop [1] was tightly focused on running massive, MapReduce jobs to process a web crawl. For increasingly diverse companies, Hadoop has become the data and computational agor\'{a}---the de facto place where data and computational resources are shared and accessed. This broad adoption and ubiquitous usage has stretched the initial design well beyond its intended target, exposing two key shortcomings: 1) tight coupling of a specific programming model with the resource management infrastructure, forcing developers to abuse the MapReduce programming model, and 2) centralized handling of jobs' control flow, which resulted in endless scalability concerns for the scheduler.In this paper, we summarize the design, development, and current state of deployment of the next generation of Hadoop's compute platform: YARN. The new architecture we introduced decouples the programming model from the resource management infrastructure, and delegates many scheduling functions (e.g., task fault-tolerance) to per-application components. We provide experimental evidence demonstrating the improvements we made, confirm improved efficiency by reporting the experience of running YARN on production environments (including 100% of Yahoo! grids), and confirm the flexibility claims by discussing the porting of several programming frameworks onto YARN viz. Dryad, Giraph, Hoya, Hadoop MapReduce, REEF, Spark, Storm, Tez.},
+  booktitle = {Proceedings of the 4th Annual Symposium on Cloud Computing},
+  articleno = {5},
+  numpages  = {16},
+  location  = {Santa Clara, California},
+  series    = {SOCC '13}
+}
+
+@inproceedings{hindman2011mesos,
+  title     = {Mesos: A Platform for $\{$Fine-Grained$\}$ Resource Sharing in the Data Center},
+  author    = {Hindman, Benjamin and Konwinski, Andy and Zaharia, Matei and Ghodsi, Ali and Joseph, Anthony D and Katz, Randy and Shenker, Scott and Stoica, Ion},
+  booktitle = {8th USENIX Symposium on Networked Systems Design and Implementation (NSDI 11)},
+  year      = {2011}
+}
+
+
+@inproceedings{1558641,
+  author    = {Capit, N. and Da Costa, G. and Georgiou, Y. and Huard, G. and Martin, C. and Mounie, G. and Neyron, P. and Richard, O.},
+  booktitle = {CCGrid 2005. IEEE International Symposium on Cluster Computing and the Grid, 2005.},
+  title     = {A batch scheduler with high level components},
+  year      = {2005},
+  volume    = {2},
+  number    = {},
+  pages     = {776-783 Vol. 2},
+  doi       = {10.1109/CCGRID.2005.1558641}
+}
+
+@inproceedings{zaharia2010spark,
+  title     = {Spark: Cluster computing with working sets},
+  author    = {Zaharia, Matei and Chowdhury, Mosharaf and Franklin, Michael J and Shenker, Scott and Stoica, Ion},
+  booktitle = {2nd USENIX Workshop on Hot Topics in Cloud Computing (HotCloud 10)},
+  year      = {2010}
+}
+
+@misc{kubernetesPodDocs,
+  author       = {Kubernetes},
+  title        = {{kubernets.io} Concepts / Pods},
+  howpublished = {\url{https://kubernetes.io/docs/concepts/workloads/pods/}},
+  note         = {Accessed: 2022-03-09}
+}
+
+
+@misc{kubernetesStatefulSetsDocs,
+  author       = {Kubernetes},
+  title        = {{kubernets.io} Concepts / StatefulSets},
+  howpublished = {\url{https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/}},
+  note         = {Accessed: 2022-03-21}
+}
+
+@misc{kubernetesDeploymentsDocs,
+  author       = {Kubernetes},
+  title        = {{kubernets.io} Concepts / Deployments},
+  howpublished = {\url{https://kubernetes.io/docs/concepts/workloads/controllers/deployment/}},
+  note         = {Accessed: 2022-03-21}
+}
+
+
+@misc{rbacProxy,
+  author       = {brancz},
+  title        = {{github.com} brancz/kube-rbac-proxy},
+  howpublished = {\url{https://github.com/brancz/kube-rbac-proxy}},
+  note         = {Accessed: 2022-03-09}
+}
+
+
+@misc{kubernetesLargeCluster,
+  author       = {Kubernetes},
+  howpublished = {\url{https://kubernetes.io/docs/setup/best-practices/cluster-large/}},
+  title        = {{kubernets.io} Getting started / Considerations for large clusters},
+  note         = {Accessed: 2022-03-23}
+}
+
+@misc{kubernetesResourceQuotas,
+  author       = {Kubernetes},
+  howpublished = {\url{https://kubernetes.io/docs/concepts/policy/resource-quotas/}},
+  title        = {{kubernets.io} Concepts / Resource Quotas},
+  note         = {Accessed: 2022-03-23}
+}
+
+
+@misc{kubernetesSchedulerDocs,
+  author       = {Kubernetes},
+  howpublished = {\url{https://kubernetes.io/docs/concepts/scheduling-eviction/kube-scheduler/}},
+  title        = {{kubernets.io} Concepts/Scheduler},
+  note         = {Accessed: 2022-03-09}
+}
+
+@misc{hpcWikiScheduling,
+  author       = {Kubernetes},
+  howpublished = {\url{https://hpc-wiki.info/hpc/Scheduling_Basics}},
+  title        = {{hpc-wiki.info} Scheduling Basics},
+  note         = {Accessed: 2022-03-09}
+}
+
+@book{schedulingBook,
+  author    = {Blazewicz, Jacek and Ecker, Klaus and Pesch, Erwin and Schmidt, Guenter and Węglarz, Jan},
+  year      = {2001},
+  month     = {01},
+  pages     = {},
+  title     = {Scheduling Computer and Manufacturing Processes},
+  isbn      = {978-3-642-07545-2},
+  doi       = {10.1007/978-3-662-04363-9},
+  publisher = {springer science \& Business media}
+}
+
+@inproceedings{wang2015towards,
+  title     = {Towards scalable distributed workload manager with monitoring-based weakly consistent resource stealing},
+  author    = {Wang, Ke and Zhou, Xiaobing and Qiao, Kan and Lang, Michael and McClelland, Benjamin and Raicu, Ioan},
+  booktitle = {Proceedings of the 24th International Symposium on High-Performance Parallel and Distributed Computing},
+  pages     = {219--222},
+  year      = {2015}
+}
+
+@article{minikubegithub,
+	author	={Kubernetes Github},
+	title	={kubernetes/minikube: Run Kubernetes locally},
+	year	={2022},
+	url	={https://github.com/kubernetes/minikube}
+	}

@@ -23,6 +23,6 @@ The Manual Scheduler Frontend can be used to test the External-Scheduler-Interfa
 **Note:** At the time of writing the Fabric8 Kubernetes Server Mock does not appear to be fully thread safe which results in flaky tests. With the version 6.0.0 concurrency issues seem to be resolved.
 
 ## Manual Scheduler
-The Manual Scheduler is a web frontend that interacts with the interface and allows a user to create a scheduling and test it. The Frontend shown in figure \ref{fig:manualScheduler} visualizes the current state of Testbeds, Schedulings, and Jobs. The scheduling builder allows to to quickly create a scheduling, by selecting a Testbed BatchJobs and their slots. To prevent unnecessary polling of the interface for changes, the frontend application connects to websockets and listens for changes.
+The Manual Scheduler is a web frontend that interacts with the interface and allows a user to create a scheduling and test it. The Frontend shown in figure \ref{fig:manualScheduler} visualizes the current state of Testbeds, Schedulings, and BatchJobs. The scheduling builder allows to to quickly create a scheduling, by selecting a Testbed BatchJobs and their slots. To prevent unnecessary polling of the interface for changes, the frontend application connects to websockets and listens for changes.
 
 ![Manual Scheduler \label{fig:manualScheduler}](graphics/manual-scheduler.png)

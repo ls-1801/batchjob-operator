@@ -9,7 +9,7 @@
 \newcommand{\documentdate}{December 22, 2015}
 \newcommand{\studentname}{Lukas Schwerdtfeger}
 \newcommand{\abstracttextde}{Kurze Zusammenfassung der Arbeit in 250 W\"ortern.}
-\newcommand{\abstracttext}{Short version of the thesis in 250 words.}
+\newcommand{\abstracttext}{Data generation has exploded over the last few years and is not expected to slow down. Big Data processing requires sophisticated systems that can keep up with the data flow. Spark and Flink are popular Big Data frameworks that aid the development of distributed dataflow applications. Spark and Flink applications are commonly deployed on a shared cluster composed of cheap commodity hardware. Previously, static partitioning of cluster resources has been used to isolate long-running batch applications from one another, which comes with potentially unused hardware. Cluster resource managers like YARN, Mesos, and Kubernetes allow a more fine-grain partitioning of shared cluster resources, using containers, allowing applications to scale more dynamically if resources are available. A fine-granular partitioning creates many possible schedulings of batch applications. Developing a new scheduling algorithm is not an easy task because controlling the cluster managers' internal scheduler usually requires a deep understanding of the cluster's inner workings. Finding optimal scheduling will significantly impact the cluster's overall resource utilization and runtime of jobs. Kubernetes is a resource manager that has become the defacto industry standard. Its interface differs considerably from other resource managers like YARN. Scheduling algorithms that have been developed for YARN can not be applied to Kubernetes without substantial changes. This work offers a simplistic interface to control the scheduling of batch applications on Kubernetes. The interface extends Kubernetes with Testbeds reserving slots in a cluster and offering them to an external scheduler. The external scheduler submits its scheduling, which will enqueue jobs and run them in order inside their dedicated slots. The interface is evaluated by implementing a profiling scheduler which first profiles applications in a dedicated testbed before submitting its scheduling decision to a larger testbed.}
 \newcommand{\acktext}{This chapter is optional. First of all, I would like to...}
 \providecommand{\tightlist}{%
   \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
@@ -64,8 +64,6 @@
 \input{generated/Evaluation/Example_Scheduling_Algorithm.tex}
 \section{Limitations}
 \input{generated/Evaluation/Limitations.tex}
-\section{Discussion}
-\input{generated/Evaluation/Discussion.tex}
 
 \chapter{State of the Art}
 \section{Volcano}
