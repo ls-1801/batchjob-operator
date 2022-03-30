@@ -5,6 +5,8 @@
 
 3. [https://github.com/ls-1801/esi-meta](https://github.com/ls-1801/esi-meta) (Thesis, auxiliary scrips, Spark Webcrawler)
 
+4. [https://github.com/ls-1801/flink-on-k8s-operator](https://github.com/ls-1801/flink-on-k8s-operator) (Modified Flink-Operator)
+
 The source code for the External-Scheduler-Interface is hosted on github.com. Both repositories contain READMEs with details on installing and using individual components. The scheduler-interface repository also includes the example scheduler used in the evaluation.
 
 The installation of the interface was tested on a new cluster in the "test-namespace" namespace. The namespace is based on the namespace of the Helm release and may or may not need to be created. The `Values.yaml` need to be adjusted when installing to a different Namespace. Images are publicly available in a repository. Thus, a complete Interface build is not required; however, build instructions are also included within the repository.

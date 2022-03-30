@@ -12,9 +12,9 @@ However, Pods can bypass the Taint Node if they have the fitting Toleration. For
 In the context of scheduling, Taints, Tolerations, Pods, and Nodes only refer to the objects stored inside the distributed key-value store. If a physical machine becomes unreachable, the objects manifest is updated. Whether the physical containers are still running or not cannot be determined, but for the duration of the Toleration, they do count as running and are not replaced with new Pods.
 
 ## Scheduling Cycle
-Kubernetes scheduling is based on the Kubernetes Scheduling Framework. As the extensible nature of Kubernetes, the scheduling framework is also extensible. Customization to the scheduling can be done at so-called extension points. 
+Kubernetes scheduling is based on the Kubernetes Scheduling Framework [@kubernetesSchedulingFramework]. As the extensible nature of Kubernetes, the scheduling framework is also extensible. Customization to the scheduling can be done at so-called extension points. 
 
-![Kubernetes Scheduling Context and its extension points](graphics/scheduling-framework-extensions.png){#fig:podSchedulingContext short-caption="Kubernetes Scheduling Context" width=25%, height=25%}
+![Kubernetes Scheduling Context and its extension points (taken from Scheduling Framework [@kubernetesSchedulingFramework])](graphics/scheduling-framework-extensions.png){#fig:podSchedulingContext short-caption="Kubernetes Scheduling Context" width=25%, height=25%}
 
 Each attempt of scheduling Pods to Nodes is split into two phases, the *scheduling cycle*, and the *binding cycle*.
 

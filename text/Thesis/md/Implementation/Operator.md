@@ -150,7 +150,7 @@ Since the Kube-Scheduler could invoke the Extender multiple times for the same P
 
 ## Scheduling Operator
 
-![Scheduling state machine](graphics/scheduling_state_machine.pdf){@fig:schedulingStateMachine}
+![Scheduling state machine](graphics/scheduling_state_machine.pdf){#fig:schedulingStateMachine}
 
 Like the BatchJob reconciler, the Scheduling Reconciler is implemented using a nested state machine (Figure \ref{fig:schedulingStateMachine}). In addition to changes to Scheduling resources, the reconciliation loop is also triggered on changes to BatchJobs or Testbeds.
  
