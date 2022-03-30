@@ -1,7 +1,6 @@
 \documentclass[12pt,a4paper,twoside]{book}
 
 % Options for packages loaded elsewhere
-\PassOptionsToPackage{unicode}{hyperref}
 \PassOptionsToPackage{hyphens}{url}
 %
 \usepackage{amsmath,amssymb}
@@ -90,13 +89,14 @@
 \newcommand*\listoflistings{\listof{codelisting}{List of Listings}}
 \makeatother
 
-
 \IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
-\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
-\hypersetup{
-  hidelinks,
-  pdfcreator={LaTeX via pandoc}}
+\usepackage[urlcolor=blue]{hyperref}
+% \hypersetup{
+%   % hidelinks,
+  % pdfcreator={LaTeX via pandoc}}
 \urlstyle{same} % disable monospaced font for URLs
+
+
 \usepackage{graphicx}
 \makeatletter
 \def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
@@ -278,7 +278,8 @@
 % \bibliographystyle{plainnat}
 
 %ref imgs
-\usepackage{hyperref}
+
+
 \usepackage{cleveref}
 
 \usepackage{csvsimple}
