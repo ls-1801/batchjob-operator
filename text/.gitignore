@@ -9,5 +9,6 @@
 *.blg
 *.bbl
 *.aux
+*.lop
 
 generated/
