@@ -32,7 +32,7 @@ The Question of Scheduling in a Distributed System is now the question of which 
 
 While some of these factors can be controlled, different algorithms can be chosen for various use cases.
 
-In distributed dataflow applications, we deal with considerable different levels of scheduling. At the Framework level, applications build a DAG-based execution plan based on the job submitted. The initial DAG breaks done the job into their respective Map and Reduce Operations. These Operations will be broken down further into smaller Tasks based on the Partitioning of Data. Finally, Tasks are executed on an arbitrary number of processes across different machines. Optimizing the schedule of tasks to an executor process will be called DAG-Level scheduling and may now also include factors like Data-Locality.
+In distributed dataflow applications, we deal with considerable different levels of scheduling. At the framework level, applications build a DAG-based execution plan based on the job submitted. The initial DAG breaks done the job into their respective Map and Reduce Operations. These Operations will be broken down further into smaller Tasks based on the Partitioning of Data. Finally, Tasks are executed on an arbitrary number of processes across different machines. Optimizing the schedule of tasks to an executor process will be called DAG-Level scheduling and may now also include factors like Data-Locality.
 
 Moving Up one Level Higher in the stack, we are concerned with running multiple Jobs inside the same cluster, and a decision needs to be made which job can spawn their executor on which Nodes. Executors are packaged on Containers. The containers are isolated so that they can not access each other.
 

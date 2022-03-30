@@ -3,7 +3,7 @@
 
 2. [https://github.com/ls-1801/ManualScheduler](https://github.com/ls-1801/ManualScheduler)
 
-3. 
+3. [https://github.com/ls-1801/esi-meta](https://github.com/ls-1801/esi-meta) (Thesis, auxiliary scrips, Spark Webcrawler)
 
 The source code for the External-Scheduler-Interface is hosted on github.com. Both repositories contain READMEs with details on installing and using individual components. The scheduler-interface repository also includes the example scheduler used in the evaluation.
 

@@ -8,7 +8,7 @@ The BatchJob Operator knows how to construct the corresponding application given
 
 The  BatchJob CR requires a user to specify only the required components, like the application image containing the actual application and its arguments like a dataset or where to find it (e.g., using HDFS). Currently, the BatchJob CR only includes a partial application-specific specification. It does not matter if a user submits a fully specified Flink or Spark application because the Operator would overwrite most of the Driver/Executor Pod specific configuration and replication configuration.
 
-![StateMachine \label{fig:batchJobStatemachine}](graphics/batch_job_state_machine.pdf)
+![BatchJob State machine](graphics/batch_job_state_machine.pdf){#fig:batchJobStatemachine}
 
  Figure \ref{fig:batchJobStatemachine} shows that the BatchJob reconciler is implemented as a nested state machine with anonymous sub-states. The approach was chosen because it creates more comprehensible software, which can be split into components and handle edge cases by design.
 
@@ -40,7 +40,7 @@ Configuration of **Resource Requests**, **Replication** is straightforward, as b
 
 **SlotIDs** and the **Testbed Name** are not part of the PodSpec, so they are configured using Labels. Labels are a generic list of key/value pairs on every object in Kubernetes.
 
-![Affinities \label{applicationSpecCreation}](graphics/affinity.png){height=25%}
+![Usage of Affinities: Pods can only potentially be scheduled onto Nodes that hosts any desired slot](graphics/affinity.png){#applicationSpecCreation short-caption="Usage of Affinities"}
 
 Ideally, the BatchJob Operator gives every Executor/TaskManager Pod individually a slot ID. The issue is that the application-specific CRs only configure a Pod template. Pods created by the application Operator are managed by a StatefulSet (similar to a ReplicaSet), ensuring the desired replication. This issue is circumvented by leaving the final decision of which Pod goes into which slot to the Extender. The Operator can only configure a list with all **SlotIDs** to the Extender. Figure \ref{applicationSpecCreation} shows how using Affinities limits the set of possible Nodes. Any Node that contains any of the desired slots needs to be considered by the scheduler and the Extender.
 
@@ -103,14 +103,14 @@ Fetch the current cluster situation by fetching all Pods with the **SLOT** label
 \begin{subfigure}[t]{0.4\textwidth}
 \caption{Desired State: No change\label{SlotsDesiredState}}
 \end{subfigure}
-\caption{TestBed Observed and Desired}
+\caption{Testbed Observed and Desired}
 \end{figure}
 
 The reconciler now builds a set of observed Pods and a set of desired Pods. \ref{SlotsNewPods} shows an example scenario where the control loop realizes that Pods from the desired state are not in the current state, thus creating the missing Pods in the *desired and not existing* set. In a different scenario displayed by \ref{SlotsNodeChange} the label on a Node was removed, thus reducing the number of slots inside the Testbed. Pods that are in the *existing and not desired* set will be removed. The final set is the *desired and existing* set, which contains Pods that already have the correct resources requirement and are placed on the correct Node.
 
 Currently, the SlotOccupationStatus holds the following information: 
 
-- **NodeID** and **NodeName**: which is derived from the Test-Bed Selector Label on the Node
+- **NodeID** and **NodeName**: which is derived from the Testbed Selector Label on the Node
 - **Position**: which is the SlotID, 
 - **slotPositionOnNode**: where the position does unique among the whole Test Bed, SlotPosition on Node is only unique per Node
 - **PodName** and **PodUID**: The Name and the Unique Identifier of a Pod that is currently residing inside the slot
@@ -130,8 +130,9 @@ Figure \ref{ComponentsInControl} shows which of the components and resources man
 
 **Note**: PodSpec here only refers to the TaskManager/Executor PodSpec, as the External-Interface does not handle Scheduling of the JobManager/Driver Pods.
 
-![Kube-Scheduler limits Nodes, Extender selects Node with slot\label{ExtenderFiltering}](graphics/ExtenderFiltering.pdf){height=50%}
+![Kube-Scheduler limits Nodes, Extender selects Node with slot](graphics/ExtenderFiltering.pdf){#ExtenderFiltering short-caption="Interaction between Extender and Kube-Scheduler"}
 
+Figure \ref{ExtenderFiltering} shows how the Kube-Scheduler is influenced to schedule Pods onto Nodes with the correct slot. The number of possible Nodes is first limited by all Nodes containing any of the slots using affinities. Finally, the Extender chooses the right Node with the designated slot. The first step is already implemented inside the Kube-Scheduler. The second step is elaborated in more detail.
 Figure \ref{ExtenderFiltering} shows how the Kube-Scheduler is influenced to schedule Pods onto Nodes with the correct slot. The number of possible Nodes is first limited by all Nodes containing any of the slots using affinities. Finally, the Extender chooses the right Node with the designated slot. The first step is already implemented inside the Kube-Scheduler. The second step is elaborated in more detail.
 
 During development, multiple scenarios of interaction between Kube-Scheduler and Extender were identified. 
@@ -149,7 +150,7 @@ Since the Kube-Scheduler could invoke the Extender multiple times for the same P
 
 ## Scheduling Operator
 
-![Scheduling state machine \label{fig:schedulingStateMachine}](graphics/scheduling_state_machine.pdf)
+![Scheduling state machine](graphics/scheduling_state_machine.pdf){@fig:schedulingStateMachine}
 
 Like the BatchJob reconciler, the Scheduling Reconciler is implemented using a nested state machine (Figure \ref{fig:schedulingStateMachine}). In addition to changes to Scheduling resources, the reconciliation loop is also triggered on changes to BatchJobs or Testbeds.
  
@@ -180,6 +181,6 @@ The Schedulings Resource may be modified at any time, moving the scheduling from
 
 The external-scheduler-facing interface is currently part of the Scheduling Reconciler. Most of the functionality has already been discussed in the previous chapter. 
 
-The interface is only a very thin wrapper around the Kubernetes API. In its current state, it is only used to hide unnecessary complexity from the external scheduler and offers are more simplistic API to interact with Kubernetes and the External-Scheduler-Interface components.
+The Interface is only a very thin wrapper around the Kubernetes API. In its current state, it is only used to hide unnecessary complexity from the external scheduler and offers are more simplistic API to interact with Kubernetes and the External-Scheduler-Interface components.
 
 A reference implementation for using the API is part of the Manual Schedulers website. 
