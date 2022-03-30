@@ -1,0 +1,4 @@
+#! /bin/bash
+
+telepresence uninstall --everything
+telepresence intercept batchjoboperator --port 8080:http
