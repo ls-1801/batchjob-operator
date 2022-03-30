@@ -16,11 +16,11 @@ Initially, BatchJobs submitted to the cluster remain in the ready state. While i
 
 The BatchJob Operator and the Scheduling Operator communicate via the BatchJobs spec (`.spec.activeScheduling` and `.spec.creationRequest`). If a Scheduling wants to claim a job, it updates the active scheduling spec. This mechanism ensures that only one Scheduling at a time can use the BatchJob. On the flip side, a Scheduling can claim multiple BatchJobs. Suppose the active Scheduling releases the job by removing the `activeScheduling` spec, the BatchJob moves back into the ready state. Releasing a job could happen at any time and may even cause any created application to be removed.
 
-Once a BatchJob is in the in-queue state, the Operator waits for the creation request issued by the Scheduling Operator. The request is again done using the BatchJobs spec and specifies desired replication and the TestBed and slots the application should use.
+Once a BatchJob is in the in-queue state, the Operator waits for the creation request issued by the Scheduling Operator. The request is again done using the BatchJobs spec and specifies desired replication and the Testbed and slots the application should use.
 
 When configuring the application to be created by the corresponding Operator, there are two types of configuration: configurations specific to the Distributed Dataflow application and configurations specific to the current Scheduling. The application configurations are persisted inside the BatchJob CR. These configurations are used on every invocation of the application and include the program and its arguments. As the name implies, Scheduling-dependent configurations need to be changed depending on the Scheduling and thus must be supplied with the creation request.
 
-After a BatchJob was requested to create the application, application-specific logic is executed. In any case, the actual steps for deploying the applications to the cluster are done by the applications Operator (Flink Operator[@FlinkOperator] or Spark Operator[@SparkOperator]). The BatchJob reconciler only instructs the application Operators with configurations for the Executor/TaskManager Pods, so they are identifiable to the Extender.
+After a BatchJob was requested to create the application, application-specific logic is executed. In any case, the actual steps for deploying the applications to the cluster are done by the applications Operator (Flink Operator [@FlinkOperator] or Spark Operator [@SparkOperator]). The BatchJob reconciler only instructs the application Operators with configurations for the Executor/TaskManager Pods, so they are identifiable to the Extender.
 
 When creating the application, the following aspects are configured for the Executor/TaskManager Pods:
 
@@ -48,9 +48,9 @@ Once the application is created, the job moves into the submitted state. It resi
 
 The BatchJob reconciler tracks the time an application ran by creating timestamps once it started running and its completion.
 
-## TestBed Operator
+## Testbed Operator
 
-The TestBed Operator monitors changes to Pods and Nodes in addition to controlling Testbed CRs. The TestBeds CR is supposed to model a collection of slots located in a cluster of machines. Slots can have specified resources. While no application is running inside a slot, it is considered *free*. To reserve resources in the cluster and thus guarantee applications supposed to be deployed inside a *free* slot actually to get the resources, the Testbed Operator needs to:
+The Testbed Operator monitors changes to Pods and Nodes in addition to controlling Testbed CRs. The Testbeds CR is supposed to model a collection of slots located in a cluster of machines. Slots can have specified resources. While no application is running inside a slot, it is considered *free*. To reserve resources in the cluster and thus guarantee applications supposed to be deployed inside a *free* slot actually to get the resources, the Testbed Operator needs to:
 
 - **Reserve Resources** by using so-called `Ghost Pods` inside the cluster that specify a resource request and thus reserve the resources
 
@@ -121,10 +121,10 @@ Currently, the SlotOccupationStatus holds the following information:
 
 ![Components under control of the External-Interface System\label{ComponentsInControl}](graphics/extender_function.pdf)
 
-Extender Component is integrated within the TestBed Reconciler. If the reconciler detects that the cluster is in progress, it pauses its control loop. This prevents both components from acting on the same Testbed concurrently, thus preventing any unexpected changes to the Testbed slot occupation state while the Extender looks for free slots.
+Extender Component is integrated within the Testbed Reconciler. If the reconciler detects that the cluster is in progress, it pauses its control loop. This prevents both components from acting on the same Testbed concurrently, thus preventing any unexpected changes to the Testbed slot occupation state while the Extender looks for free slots.
 Currently, a cluster is considered in progress if any Pods require Scheduling (.spec.NodeName is not set) or are terminating (deletion timestamp is set).
 
-The Extender is the component that directly interacts with the Kube-Scheduler. An additional scheduler, with an additional scheduling profile, is running concurrently to the default Kube-Scheduler. The custom scheduler (referred to as Kube-Scheduler) is configured to use the Extender. To guarantee the Scheduling of Pods onto the TestBeds slots, the Extender extends the Filter and Preemption extension points of the Kubernetes scheduling cycle. The main problem the Extender can solve is that the BatchJob Operator does not have full control of Pods created downstream by the applications Operator. 
+The Extender is the component that directly interacts with the Kube-Scheduler. An additional scheduler, with an additional scheduling profile, is running concurrently to the default Kube-Scheduler. The custom scheduler (referred to as Kube-Scheduler) is configured to use the Extender. To guarantee the Scheduling of Pods onto the Testbeds slots, the Extender extends the Filter and Preemption extension points of the Kubernetes scheduling cycle. The main problem the Extender can solve is that the BatchJob Operator does not have full control of Pods created downstream by the applications Operator. 
 
 Figure \ref{ComponentsInControl} shows which of the components and resources managed by them are under the control of the External-Interfaces System. The BatchJob Operator can only control the Application CR created. The Application CR only describes a single PodSpec, which will later be replicated into multiple Pods by the replication controller, part of the StatefulSet. Thus, it is impossible to set Pod-specific configurations, like the SlotID, at the BatchJob Operator Level. However, with enough information, all Pods can be configured for the Extender to figure out which Pod belongs in which slot.
 

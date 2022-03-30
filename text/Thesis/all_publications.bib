@@ -279,6 +279,17 @@
   year      = {2010}
 }
 
+@article{carbone2015apache,
+  title     = {Apache flink: Stream and batch processing in a single engine},
+  author    = {Carbone, Paris and Katsifodimos, Asterios and Ewen, Stephan and Markl, Volker and Haridi, Seif and Tzoumas, Kostas},
+  journal   = {Bulletin of the IEEE Computer Society Technical Committee on Data Engineering},
+  volume    = {36},
+  number    = {4},
+  year      = {2015},
+  publisher = {IEEE Computer Society}
+}
+
+
 @misc{kubernetesPodDocs,
   author       = {Kubernetes},
   title        = {{kubernets.io} Concepts / Pods},
@@ -358,9 +369,68 @@
   year      = {2015}
 }
 
-@article{minikubegithub,
-	author	={Kubernetes Github},
-	title	={kubernetes/minikube: Run Kubernetes locally},
-	year	={2022},
-	url	={https://github.com/kubernetes/minikube}
-	}
+@misc{minikubegithub,
+  author = {Kubernetes Github},
+  title  = {kubernetes/minikube: Run Kubernetes locally},
+  year   = {2022},
+  url    = {https://github.com/kubernetes/minikube}
+}
+
+  @article{kambatla2014trends,
+  title     = {Trends in big data analytics},
+  author    = {Kambatla, Karthik and Kollias, Giorgos and Kumar, Vipin and Grama, Ananth},
+  journal   = {Journal of parallel and distributed computing},
+  volume    = {74},
+  number    = {7},
+  pages     = {2561--2573},
+  year      = {2014},
+  publisher = {Elsevier}
+}
+@article{singh2015survey,
+  title     = {A survey on platforms for big data analytics},
+  author    = {Singh, Dilpreet and Reddy, Chandan K},
+  journal   = {Journal of big data},
+  volume    = {2},
+  number    = {1},
+  pages     = {1--20},
+  year      = {2015},
+  publisher = {Springer}
+}
+
+@inproceedings{yoo2003slurm,
+  title        = {Slurm: Simple linux utility for resource management},
+  author       = {Yoo, Andy B and Jette, Morris A and Grondona, Mark},
+  booktitle    = {Workshop on job scheduling strategies for parallel processing},
+  pages        = {44--60},
+  year         = {2003},
+  organization = {Springer}
+}
+
+    @inproceedings{10.1145/2168836.2168847,
+  author    = {Ferguson, Andrew D. and Bodik, Peter and Kandula, Srikanth and Boutin, Eric and Fonseca, Rodrigo},
+  title     = {Jockey: Guaranteed Job Latency in Data Parallel Clusters},
+  year      = {2012},
+  isbn      = {9781450312233},
+  publisher = {Association for Computing Machinery},
+  address   = {New York, NY, USA},
+  url       = {https://doi.org/10.1145/2168836.2168847},
+  doi       = {10.1145/2168836.2168847},
+  abstract  = {Data processing frameworks such as MapReduce [8] and Dryad [11] are used today in business environments where customers expect guaranteed performance. To date, however, these systems are not capable of providing guarantees on job latency because scheduling policies are based on fair-sharing, and operators seek high cluster use through statistical multiplexing and over-subscription. With Jockey, we provide latency SLOs for data parallel jobs written in SCOPE. Jockey precomputes statistics using a simulator that captures the job's complex internal dependencies, accurately and efficiently predicting the remaining run time at different resource allocations and in different stages of the job. Our control policy monitors a job's performance, and dynamically adjusts resource allocation in the shared cluster in order to maximize the job's economic utility while minimizing its impact on the rest of the cluster. In our experiments in Microsoft's production Cosmos clusters, Jockey meets the specified job latency SLOs and responds to changes in cluster conditions.},
+  booktitle = {Proceedings of the 7th ACM European Conference on Computer Systems},
+  pages     = {99–112},
+  numpages  = {14},
+  keywords  = {deadline, data parallel, MapReduce, SLO, dynamic adaptation, Dryad, scheduling},
+  location  = {Bern, Switzerland},
+  series    = {EuroSys '12}
+}
+
+
+@inproceedings{lu2014cloud,
+  title={Cloud computing survey},
+  author={Lu, Gang and Zeng, Wen Hua},
+  booktitle={Applied Mechanics and Materials},
+  volume={530},
+  pages={650--661},
+  year={2014},
+  organization={Trans Tech Publ}
+}

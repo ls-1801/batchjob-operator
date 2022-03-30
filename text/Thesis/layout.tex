@@ -154,6 +154,11 @@
 %% special, short for shell
 \newcommand{\shl}[1]{\sf \small #1\rm\normalsize}
 
+\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+
 %% indentation in tables
 \newcommand{\tabind}[1]{\rule{#1mm}{0cm}}
 

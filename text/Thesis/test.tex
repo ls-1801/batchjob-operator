@@ -39,46 +39,29 @@
   hidelinks,
   pdfcreator={LaTeX via pandoc}}
 \urlstyle{same} % disable monospaced font for URLs
-\usepackage{color}
-\usepackage{fancyvrb}
-\newcommand{\VerbBar}{|}
-\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
-\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
-% Add ',fontsize=\small' for more characters per line
-\usepackage{framed}
-\definecolor{shadecolor}{RGB}{248,248,248}
-\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
-\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
-\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
-\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
-\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
-\newcommand{\BuiltInTok}[1]{#1}
-\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
-\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
-\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
-\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
-\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
-\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
-\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
-\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
-\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
-\newcommand{\ExtensionTok}[1]{#1}
-\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
-\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
-\newcommand{\ImportTok}[1]{#1}
-\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
-\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
-\newcommand{\NormalTok}[1]{#1}
-\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
-\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
-\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
-\newcommand{\RegionMarkerTok}[1]{#1}
-\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
-\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
-\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
-\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
-\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
-\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
 \setlength{\emergencystretch}{3em} % prevent overfull lines
 \providecommand{\tightlist}{%
   \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
@@ -128,76 +111,96 @@
 
 \begin{document}
 
-The External-Scheduler-Interface allows an external scheduler to control
-which cluster resources, Batch Applications like Apache Spark and Apache
-Flink will use for their TaskManager and Executor Pods. No Assumptions
-are made about the Driver and JobManager Pods. The Interface offers
-slots in the form of Testbeds to the External-Scheduler. The size (both
-in terms of the number of slots and resources) of Testbeds are
-controlled via the Testbeds manifest. Managing the Testbed is not
-exposed through the Interface, as they are not expected to be changed by
-an External-Scheduler, other than using its slots.
+The Interfaces usability is evaluated with an exemplary implementation
+of a non-trivial scheduling algorithm. Since the Interfaces can manage
+multiple Testbeds inside the same cluster, a Profiling-Scheduler
+approach is chosen to highlight some of the interface's features.
 
-The concept of a Testbed allows the reservation of resources inside a
-cluster. It may be unreasonable to give an external scheduler all
-available resources in a multi-tenant cluster. The resources available
-to the external scheduler can be precisely controlled using Testbeds.
-Schedulings created by the external scheduler are always directed
-towards a Testbed. Currently, an active scheduling will claim its
-Testbed and prevent other Schedulings from using it.
+The example scheduling algorithm is used on a 5 Node cluster running
+inside the Google Cloud Platforms Kubernetes Engine (GKE). During
+development, smaller Nodes with a single vCPU and 4Gi of Memory were
+sufficient, but for the final evaluation, Nodes were doubled in
+capacity.
 
-The Scheduling resource creates a queue of Batch Jobs that will be run
-in the specified Testbed. Schedulings currently support a slot based
-strategy, where the external scheduler directly specifies which job
-should use which slot, and a queue based strategy, where only a queue of
-jobs is submitted and no specific slot is used. Listing shows an example
-resource manifest for a Scheduling with a queue of four jobs.
+\begin{figure}
+\centering
+\includegraphics{graphics/evaluation_example_scheduler_arch.pdf}
+\caption{Architecture of the Example Profiler-Scheduler}
+\end{figure}
 
-\begin{codelisting}
+Two Test-Beds are created using the Test-Bed CRD, the Profiling Testbed,
+and the Testbed for the actual execution of Jobs. The slot size was
+chosen depending on the resources available. For the final evaluation, a
+slot size of 750m CPU and 3Gi Memory leaves enough resources available
+for the cluster's control plane, managing Pods (Driver, JobManager), and
+the Operators running inside the cluster.
 
-\caption{Example: queue based Scheduling manifest}
+Contrary to the Scheduler Thread, which only creates a scheduling if
+requested (via stdin), the Profiler Thread runs at all times, updating
+and refining the Co-Location Matrix by choosing job pairings with the
+least data points. To test the systems stability the scheduling thread
+was later modified to create schedulings by choosing jobs at random.
 
-\hypertarget{lst:captionAttr}{%
-\label{lst:captionAttr}}%
-\begin{Shaded}
-\begin{Highlighting}[]
-\FunctionTok{apiVersion}\KeywordTok{:}\AttributeTok{ batchjob.gcr.io/v1alpha1}
-\FunctionTok{kind}\KeywordTok{:}\AttributeTok{ Scheduling}
-\FunctionTok{metadata}\KeywordTok{:}
-\AttributeTok{  }\FunctionTok{name}\KeywordTok{:}\AttributeTok{ profiler{-}scheduling{-}0}
-\AttributeTok{  }\FunctionTok{namespace}\KeywordTok{:}\AttributeTok{ default}
-\FunctionTok{spec}\KeywordTok{:}
-\AttributeTok{  }\FunctionTok{queueBased}\KeywordTok{:}
-\AttributeTok{    }\KeywordTok{{-}}\AttributeTok{ }\FunctionTok{name}\KeywordTok{:}\AttributeTok{ spark{-}crawler}
-\AttributeTok{      }\FunctionTok{namespace}\KeywordTok{:}\AttributeTok{ default}
-\AttributeTok{    }\KeywordTok{{-}}\AttributeTok{ }\FunctionTok{name}\KeywordTok{:}\AttributeTok{ spark{-}crawler}
-\AttributeTok{      }\FunctionTok{namespace}\KeywordTok{:}\AttributeTok{ default}
-\AttributeTok{    }\KeywordTok{{-}}\AttributeTok{ }\FunctionTok{name}\KeywordTok{:}\AttributeTok{ batchjob{-}spark}
-\AttributeTok{      }\FunctionTok{namespace}\KeywordTok{:}\AttributeTok{ default}
-\AttributeTok{    }\KeywordTok{{-}}\AttributeTok{ }\FunctionTok{name}\KeywordTok{:}\AttributeTok{ batchjob{-}spark}
-\AttributeTok{      }\FunctionTok{namespace}\KeywordTok{:}\AttributeTok{ default}
-\AttributeTok{  }\FunctionTok{slots}\KeywordTok{:}
-\AttributeTok{    }\FunctionTok{name}\KeywordTok{:}\AttributeTok{ profiler{-}slots}
-\AttributeTok{    }\FunctionTok{namespace}\KeywordTok{:}\AttributeTok{ default}
-\end{Highlighting}
-\end{Shaded}
+Co-Locations are described as a simple runtime in seconds. By iterating
+over the available job pairings, the Profiler builds a Co-Location
+Matrix. The Profiler creates a cumulative moving average for each job
+pairing.
 
-\end{codelisting}
+Jobs cannot be paired with themself since the acquire/release mechanism
+only allows a single execution per job at a time. In theory, Jobs can be
+Co-Located with itself by deploying the application with a replication
+of two, but this could not be directly compared to Co-Location with a
+different job, as work done is split between both instances.
 
-Naturally an external scheduler could interact with the Interface
-through the Kubernetes API by managing scheduling manifest. However, in
-case the external scheduler cannot directly access the Kubernetes API a
-thin HTTP layer is provided. The External-Scheduler-Interface offers
-endpoints for querying the current cluster situation in the form of the
-Testbeds slots occupation status and the status of Schedulings or Batch
-Jobs. The Interface provides a REST API that allows the creation and
-deletion of Schedulings and the ability to update information stored
-inside the Batch Job manifest. An additional Stomp \citep{Stomp}
-(WebSocket) server is available to not enforce any polling for updates.
+\begin{longtable}[]{@{}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1717}}
+  >{\centering\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1616}}
+  >{\centering\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1616}}
+  >{\centering\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1818}}
+  >{\centering\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1717}}
+  >{\centering\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1515}}@{}}
+\toprule
+\begin{minipage}[b]{\linewidth}\raggedleft
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+batchjob-flink
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+batchjob-spark
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+batchjob-sample3
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+batchjob-flink2
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+spark-crawler
+\end{minipage} \\
+\midrule
+\endhead
+batchjob-flink & / & 36 (5) & 28 (11) & 24 (16) & 34 (11) \\
+batchjob-spark & 70 (4) & / & 93 (4) & 68 (4) & 94 (4) \\
+batchjob-sample3 & 444 (4) & 480 (6) & / & 450 (3) & 493 (3) \\
+batchjob-flink2 & 24 (16) & 36 (5) & 30 (11) & / & 25 (10) \\
+spark-crawler & 173 (3) & 203 (5) & 211 (3) & 171 (3) & / \\
+\bottomrule
+\end{longtable}
 
-The functionality is demonstrated as part of the evaluation, either
-through the Manual Scheduler, which acts as a testing tool and as
-visualization, and the Example Scheduler, which uses multiple Testbeds
-to profile Batch Jobs for its scheduling decisions.
+\textbf{Note:} The matrix is not symmetrical because the runtime of each
+job is used, not the runtime of both jobs (or the runtime of the
+complete scheduling). The runtime of the scheduling is the time after
+acquisition until all jobs have been completed. The Batch Job Operator
+only tracks the application's time inside the running state. This
+approach was chosen because applications may have vastly different
+startup times, which will become insignificant for long-running jobs.
+
+The Scheduling Thread is the traditional scheduler. Given a list of
+Jobs, the Scheduling Thread tries to find optimal scheduling regarding
+total runtime. The scheduler takes a greedy approach choosing the
+co-located job based on the job with the shortest runtime to keep the
+evaluation simple. Replication of each job is selected based on the
+number of slots (Replication = NumberOfSlots / NumberOfJobs). Empty
+slots are again greedily filled with jobs suited best for co-location,
+not allowing a job to be chosen more than once.
+
+Both the Profiler and the Scheduler run in parallel. If any of them
+cannot acquire their jobs, the scheduling will wait until they become
+available.
 
 \end{document}

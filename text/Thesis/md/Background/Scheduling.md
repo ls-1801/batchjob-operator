@@ -38,4 +38,4 @@ Moving Up one Level Higher in the stack, we are concerned with running multiple 
 
 A more profound introduction into the specifics of scheduling in Kubernetes is inside the Scheduling in Kubernetes chapter.
 
-Cluster resource manager like Mesos[@hindman2011mesos] allows scheduling on multiple levels, with Resource Offers. The top-level Mesos scheduler finds multiple candidates and offers them to the DAG-Level scheduler framework. The potential for cross-level scheduling would allow the Top-level scheduler to respect data-locality constraints for the DAG-level scheduler.
+Cluster resource manager like Mesos [@hindman2011mesos] allows scheduling on multiple levels, with Resource Offers. The top-level Mesos scheduler finds multiple candidates and offers them to the DAG-Level scheduler framework. The potential for cross-level scheduling would allow the Top-level scheduler to respect data-locality constraints for the DAG-level scheduler.

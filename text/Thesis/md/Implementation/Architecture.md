@@ -14,7 +14,7 @@ Additionally to the three reconcilers, three CRDs were designed.
 
 - **Schedulings** represents the decision done by the external scheduler. A Scheduling maps multiple BatchJobs to Testbeds available in the cluster. The scheduling also acts as a queue and submits jobs into the slots in order once slots become available.
 
-The BatchJob CR is used to model a reoccurring batch application. To support both Flink and Spark applications, an abstract BatchJob CR is chosen that maps the state of application-specific CR (link SparkApplications[@SparkOperator] and FlinkCluster[@FlinkOperator]) to a common set of possible states. A BatchJob can be claimed by exactly one scheduling. This is because the BatchJob CR models exactly the life cycle of a single application.
+The BatchJob CR is used to model a reoccurring batch application. To support both Flink and Spark applications, an abstract BatchJob CR is chosen that maps the state of application-specific CR (link SparkApplications [@SparkOperator] and FlinkCluster [@FlinkOperator]) to a common set of possible states. A BatchJob can be claimed by exactly one scheduling. This is because the BatchJob CR models exactly the life cycle of a single application.
 
 Using the extender and preemption, the Testbed reconciler can reserve resources for Pods created by the BatchJob CR. The Slots CR guarantees resources in the cluster by creating Ghost Pods, with a specific resource request representing the size of a slot. The Ghost Pods reserve resources by preventing other Pods requiring scheduling to be scheduled onto the same Node.
 
